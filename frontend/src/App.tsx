@@ -62,42 +62,12 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontWeight: 800, letterSpacing: '-0.02em' }}>Agenda</span>
-            <span
-              style={{
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                background: effectiveDark
-                  ? 'linear-gradient(135deg, #60A5FA 0%, #C084FC 100%)'
-                  : 'linear-gradient(135deg, #1D4ED8 0%, #7C3AED 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
-            >
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+            <span style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: '17px' }}>Agenda</span>
+            <span className="brand-accent-text" style={{ fontSize: '17px' }}>
               Inteligente
             </span>
-            <span
-              style={{
-                fontSize: '9.5px',
-                fontWeight: 800,
-                letterSpacing: '0.08em',
-                padding: '1.5px 6px',
-                borderRadius: '5px',
-                background: effectiveDark
-                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.25) 100%)'
-                  : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(124, 58, 237, 0.15) 100%)',
-                border: effectiveDark
-                  ? '1px solid rgba(192, 132, 252, 0.45)'
-                  : '1px solid rgba(124, 58, 237, 0.35)',
-                color: effectiveDark ? '#C084FC' : '#6D28D9',
-                boxShadow: effectiveDark
-                  ? '0 0 10px rgba(147, 51, 234, 0.25)'
-                  : 'none',
-                lineHeight: '1.2',
-                textTransform: 'uppercase'
-              }}
-            >
+            <span className="brand-pro-badge" style={{ fontSize: '9.5px', padding: '1.5px 6px' }}>
               PRO
             </span>
           </div>

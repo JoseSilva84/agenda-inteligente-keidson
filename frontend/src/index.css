@@ -2163,16 +2163,81 @@ body.pasting .clipchip {
   .hint { display: none; }
 }
 
-*, *::before, *::after {
-  font-weight: 300 !important;
-}
 .brand span {
-  font-weight: 700 !important;
   font-size: 14.4px;
   letter-spacing: .02em;
 }
 svg.i {
   stroke-width: 1.5;
+}
+
+/* Brand Title Accent Gradient & Fallback */
+.brand-accent-text {
+  display: inline-block;
+  font-family: var(--font-display, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #1D4ED8 0%, #7C3AED 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #3730A3;
+}
+
+:root[data-theme="dark"] .brand-accent-text {
+  background: linear-gradient(135deg, #60A5FA 0%, #C084FC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #C084FC;
+}
+
+/* Brand Pro Pill Badge */
+.brand-pro-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2.5px 7px;
+  border-radius: 6px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  color: #4338CA;
+  box-shadow: 0 1px 3px rgba(67, 56, 202, 0.12);
+}
+
+:root[data-theme="dark"] .brand-pro-badge {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.25) 100%);
+  border: 1px solid rgba(192, 132, 252, 0.45);
+  color: #C084FC;
+  box-shadow: 0 0 12px rgba(147, 51, 234, 0.3);
+}
+
+/* Light Theme Card & Inputs Enhancements */
+:root[data-theme="light"] .card {
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(15, 23, 42, 0.06);
+}
+
+:root[data-theme="light"] .field {
+  color: #334155;
+  font-weight: 600;
+}
+
+:root[data-theme="light"] .field input {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+}
+
+:root[data-theme="light"] .field input:focus {
+  border-color: #4F46E5;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 /* Efeitos em Loop - Borda do Pastor e Botão Entrar */
 @keyframes auraSpin {

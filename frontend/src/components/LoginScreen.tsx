@@ -86,7 +86,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           width: '740px',
           height: '420px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 70%)',
+          background: effectiveDark
+            ? 'radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(42, 76, 219, 0.08) 0%, transparent 70%)',
           pointerEvents: 'none',
           filter: 'blur(50px)'
         }}
@@ -137,7 +139,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
                 fontFamily: "var(--font-display, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Figtree', sans-serif)",
@@ -149,45 +151,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             >
               Agenda
             </span>
-            <span
-              style={{
-                fontFamily: "var(--font-display, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Figtree', sans-serif)",
-                fontSize: '18px',
-                fontWeight: 700,
-                letterSpacing: '-0.025em',
-                background: effectiveDark
-                  ? 'linear-gradient(135deg, #60A5FA 0%, #C084FC 100%)'
-                  : 'linear-gradient(135deg, #1D4ED8 0%, #7C3AED 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
-            >
+            <span className="brand-accent-text">
               Inteligente
             </span>
-            <span
-              style={{
-                fontFamily: "var(--font-display, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif)",
-                fontSize: '10px',
-                fontWeight: 800,
-                letterSpacing: '0.08em',
-                padding: '2px 7px',
-                borderRadius: '6px',
-                background: effectiveDark
-                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.25) 100%)'
-                  : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(124, 58, 237, 0.15) 100%)',
-                border: effectiveDark
-                  ? '1px solid rgba(192, 132, 252, 0.45)'
-                  : '1px solid rgba(124, 58, 237, 0.35)',
-                color: effectiveDark ? '#C084FC' : '#6D28D9',
-                boxShadow: effectiveDark
-                  ? '0 0 12px rgba(147, 51, 234, 0.3)'
-                  : '0 1px 4px rgba(124, 58, 237, 0.15)',
-                lineHeight: '1.2',
-                textTransform: 'uppercase',
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}
-            >
+            <span className="brand-pro-badge">
               PRO
             </span>
           </div>
@@ -248,7 +215,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             background: 'var(--surface-glass)',
             backdropFilter: 'var(--apple-blur)',
             WebkitBackdropFilter: 'var(--apple-blur)',
-            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.42)',
+            boxShadow: effectiveDark
+              ? '0 24px 60px rgba(0, 0, 0, 0.42)'
+              : '0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(15, 23, 42, 0.06)',
             border: '1px solid var(--line)'
           }}
         >
