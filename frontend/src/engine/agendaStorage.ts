@@ -19,6 +19,30 @@ export const DEFAULT_SETTINGS = () => ({
   ]
 });
 
+const PASTOR_AVATAR_KEY = 'agenda-pastor-avatar';
+
+export function getPastorAvatar(): string {
+  try {
+    return localStorage.getItem(PASTOR_AVATAR_KEY) || '/pastor.jpg';
+  } catch {
+    return '/pastor.jpg';
+  }
+}
+
+export function setPastorAvatar(dataUrl: string) {
+  try {
+    localStorage.setItem(PASTOR_AVATAR_KEY, dataUrl);
+    window.dispatchEvent(new CustomEvent('pastor-avatar-changed', { detail: dataUrl }));
+  } catch {}
+}
+
+export function resetPastorAvatar() {
+  try {
+    localStorage.removeItem(PASTOR_AVATAR_KEY);
+    window.dispatchEvent(new CustomEvent('pastor-avatar-changed', { detail: '/pastor.jpg' }));
+  } catch {}
+}
+
 export function normSettings(s: any) {
   const d = DEFAULT_SETTINGS();
   let cats = Array.isArray(s?.categories) && s.categories.length ? s.categories : d.categories;

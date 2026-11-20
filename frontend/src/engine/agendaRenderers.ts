@@ -60,7 +60,7 @@ import {
   visible,
   withSubs
 } from './agendaCore';
-import { browserNotify, chime, toast } from './agendaStorage';
+import { browserNotify, chime, toast, getPastorAvatar } from './agendaStorage';
 
 export const $ = (s: string, r: Document | HTMLElement = document) => r.querySelector(s) as any;
 export const $$ = (s: string, r: Document | HTMLElement = document) => [...r.querySelectorAll(s)] as any[];
@@ -1603,6 +1603,25 @@ export function settingsHTML() {
       <div class="seg" role="group">
         <button type="button" data-act="set-theme" data-val="dark" aria-pressed="${curTheme === 'dark'}">Modo Escuro (Dark)</button>
         <button type="button" data-act="set-theme" data-val="light" aria-pressed="${curTheme === 'light'}">Modo Claro (Light)</button>
+      </div>
+    </div>
+    <div class="card"><h2 style="margin-bottom:10px">Foto do Pastor (Tela de Acesso & Perfil)</h2>
+      <p class="muted" style="margin:0 0 14px">Personalize a foto oficial com destaque exibida na tela de acesso da Agenda Inteligente.</p>
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <div style="position:relative;width:84px;height:84px;border-radius:50%;overflow:hidden;border:3px solid var(--accent);box-shadow:0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);background:var(--surface)">
+          <img id="avatar-preview-img" src="${getPastorAvatar()}" alt="Foto do Pastor" style="width:100%;height:100%;object-fit:cover;display:block">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label class="btn btn-sm btn-primary" style="cursor:pointer;margin:0">
+              <svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              Escolher Nova Foto
+              <input type="file" id="inp-avatar-upload" accept="image/*" style="display:none">
+            </label>
+            <button class="btn btn-sm" id="btn-avatar-reset" type="button">Restaurar Foto Original</button>
+          </div>
+          <span class="muted small">Formatos suportados: JPG, PNG, WEBP. A alteração é imediata na tela de acesso e na agenda.</span>
+        </div>
       </div>
     </div>
     <div class="card"><h2 style="margin-bottom:12px">Horário útil e pendências</h2>

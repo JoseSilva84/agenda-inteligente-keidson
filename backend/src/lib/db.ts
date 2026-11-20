@@ -45,14 +45,20 @@ export async function isPostgresConnected(): Promise<boolean> {
   }
 }
 
+export const getAdminConfig = () => ({
+  email: (process.env.ADMIN_EMAIL || process.env.INITIAL_USER_EMAIL || 'keidson@agendainteligente.com').toLowerCase().trim(),
+  password: process.env.ADMIN_PASSWORD || process.env.INITIAL_USER_PASSWORD || '123456',
+  name: process.env.ADMIN_NAME || 'Pr. Keidson Rodrigues'
+});
+
 async function ensureDefaultUserPg() {
-  const email = 'keidson@agendainteligente.com';
+  const { email, password, name } = getAdminConfig();
   const existing = await prisma.user.findUnique({ where: { email } });
   if (!existing) {
-    const passwordHash = await bcrypt.hash('123456', 10);
+    const passwordHash = await bcrypt.hash(password, 10);
     await prisma.user.create({
       data: {
-        name: 'Keidson',
+        name,
         email,
         passwordHash,
         role: 'owner',
@@ -120,13 +126,13 @@ export function saveLocalStore(data: LocalStoreData) {
 
 function ensureDefaultUserLocal() {
   const store = loadLocalStore();
-  const email = 'keidson@agendainteligente.com';
+  const { email, password, name } = getAdminConfig();
   if (!store.users.some((u) => u.email === email)) {
     const id = 'usr_keidson_owner';
-    const passwordHash = bcrypt.hashSync('123456', 10);
+    const passwordHash = bcrypt.hashSync(password, 10);
     store.users.push({
       id,
-      name: 'Keidson',
+      name,
       email,
       passwordHash,
       role: 'owner',

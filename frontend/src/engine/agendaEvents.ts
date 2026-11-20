@@ -26,7 +26,7 @@ import {
   ymd
 } from './agendaHelpers';
 import { S, Store, Undo, ensureSettings, findOcc, isRec, suggestAll } from './agendaCore';
-import { chime, initAudio, normSettings, toast } from './agendaStorage';
+import { chime, initAudio, normSettings, toast, setPastorAvatar, resetPastorAvatar } from './agendaStorage';
 import {
   $,
   $$,
@@ -805,6 +805,13 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
       sendChat(ak.dataset.ask!);
       return;
     }
+    if (t.closest('#btn-avatar-reset')) {
+      resetPastorAvatar();
+      const img = document.getElementById('avatar-preview-img') as HTMLImageElement;
+      if (img) img.src = '/pastor.jpg';
+      toast('Foto restaurada para a imagem padrão.');
+      return;
+    }
     const a = t.closest('[data-act]') as HTMLElement | null;
     if (a) {
       const act = a.dataset.act;
@@ -1277,6 +1284,22 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
       s.categories = s.categories.map((c: any, i: number) => (i === +t.dataset.catname! ? { ...c, name: v } : c));
       t.blur();
       saveSettings();
+      return;
+    }
+    if (t.id === 'inp-avatar-upload' && t.files && t.files[0]) {
+      const file = t.files[0];
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        if (dataUrl) {
+          setPastorAvatar(dataUrl);
+          const img = document.getElementById('avatar-preview-img') as HTMLImageElement;
+          if (img) img.src = dataUrl;
+          toast('Foto do Pastor atualizada com sucesso!');
+        }
+      };
+      reader.readAsDataURL(file);
+      t.value = '';
       return;
     }
     if (t.id === 'imp' && t.files && t.files[0]) {
