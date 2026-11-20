@@ -106,41 +106,25 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           zIndex: 10
         }}
       >
-        {/* Centered Brand Mark with Apple glassmorphism styling */}
+        {/* Centered Brand Title without card background or icon */}
         <div
-          className="brand"
           style={{
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            padding: '7px 18px',
-            borderRadius: '16px',
-            background: 'color-mix(in srgb, var(--surface) 60%, transparent)',
-            border: '1px solid var(--line)',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.12)',
-            backdropFilter: 'var(--apple-blur)',
-            WebkitBackdropFilter: 'var(--apple-blur)'
+            justifyContent: 'center',
+            userSelect: 'none'
           }}
         >
-          <div
-            className="mark"
+          <span
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #2A4CDB 0%, #7C3AED 100%)',
-              boxShadow: '0 4px 14px rgba(42, 76, 219, 0.45)',
-              display: 'grid',
-              placeItems: 'center',
-              border: '1px solid rgba(255, 255, 255, 0.25)'
+              fontSize: '15px',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: 'var(--ink)',
+              textTransform: 'uppercase',
+              opacity: 0.95
             }}
           >
-            <svg className="i" viewBox="0 0 24 24" style={{ width: 19, height: 19, stroke: '#ffffff', strokeWidth: 1.8 }}>
-              <rect x="3" y="4.5" width="18" height="16" rx="3" />
-              <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
-            </svg>
-          </div>
-          <span style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--ink)' }}>
             AGENDA INTELIGENTE
           </span>
         </div>
@@ -270,7 +254,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             {/* Title: Acesso */}
             <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
-              Acesso
+              Pr. Keidson Rodrigues
             </h1>
           </div>
 
