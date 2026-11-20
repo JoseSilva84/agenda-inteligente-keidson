@@ -1,0 +1,91 @@
+# ==============================================================================
+# Agenda Inteligente - Pastor Keidson (.gitignore)
+# Proteção de dados sensíveis, credenciais, dependências e artefatos de build
+# ==============================================================================
+
+# Dependências (Node / NPM)
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# Variáveis de Ambiente & Credenciais Sensíveis (NUNCA comitar)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+*.env
+backend/.env
+frontend/.env
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+secrets/
+credentials.json
+
+# Permitir apenas os templates de exemplo
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Builds e Distribuição
+dist/
+*/dist/
+build/
+*/build/
+out/
+*.tsbuildinfo
+
+# Dados Locais & Banco de Dados
+backend/data/*.json
+!backend/data/.gitkeep
+data/*.json
+!data/.gitkeep
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Prisma engines locais & caches
+backend/node_modules/.prisma/
+backend/node_modules/.cache/
+prisma/*.db
+
+# Logs e Depuração
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Arquivos do Sistema Operacional (macOS, Windows, Linux)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# IDEs e Editores
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.suo
+*.ntvs*
+*.njsproj
+*.swp
+*.swo
+
+# Arquivos temporários
+*.tmp
+*.temp
