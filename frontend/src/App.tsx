@@ -55,14 +55,52 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
       transition={{ duration: 0.2 }}
     >
       <header className="top">
-        <div className="brand">
+        <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
           <div className="mark">
             <svg className="i" viewBox="0 0 24 24">
               <rect x="3" y="4.5" width="18" height="16" rx="3" />
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <span>AGENDA INTELIGENTE</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 800, letterSpacing: '-0.02em' }}>Agenda</span>
+            <span
+              style={{
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                background: effectiveDark
+                  ? 'linear-gradient(135deg, #60A5FA 0%, #C084FC 100%)'
+                  : 'linear-gradient(135deg, #1D4ED8 0%, #7C3AED 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Inteligente
+            </span>
+            <span
+              style={{
+                fontSize: '9.5px',
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                padding: '1.5px 6px',
+                borderRadius: '5px',
+                background: effectiveDark
+                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.25) 100%)'
+                  : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(124, 58, 237, 0.15) 100%)',
+                border: effectiveDark
+                  ? '1px solid rgba(192, 132, 252, 0.45)'
+                  : '1px solid rgba(124, 58, 237, 0.35)',
+                color: effectiveDark ? '#C084FC' : '#6D28D9',
+                boxShadow: effectiveDark
+                  ? '0 0 10px rgba(147, 51, 234, 0.25)'
+                  : 'none',
+                lineHeight: '1.2',
+                textTransform: 'uppercase'
+              }}
+            >
+              PRO
+            </span>
+          </div>
         </div>
         <nav className="tabs" id="tabs"></nav>
         <div className="top-r">

@@ -106,27 +106,91 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           zIndex: 10
         }}
       >
-        {/* Centered Brand Title without card background or icon */}
+        {/* Centered Brand: Beautiful Glowing Icon + Title with NO background card */}
         <div
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: '12px',
             userSelect: 'none'
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: '15px',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              color: 'var(--ink)',
-              textTransform: 'uppercase',
-              opacity: 0.95
+              width: '36px',
+              height: '36px',
+              borderRadius: '11px',
+              background: 'linear-gradient(135deg, #2A4CDB 0%, #7C3AED 100%)',
+              boxShadow: '0 4px 18px rgba(42, 76, 219, 0.45)',
+              display: 'grid',
+              placeItems: 'center',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              flexShrink: 0
             }}
           >
-            AGENDA INTELIGENTE
-          </span>
+            <svg
+              className="i"
+              viewBox="0 0 24 24"
+              style={{ width: 20, height: 20, stroke: '#ffffff', strokeWidth: 1.8 }}
+            >
+              <rect x="3" y="4.5" width="18" height="16" rx="3" />
+              <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
+            </svg>
+          </div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+            <span
+              style={{
+                fontFamily: "var(--font-display, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Figtree', sans-serif)",
+                fontSize: '18px',
+                fontWeight: 800,
+                letterSpacing: '-0.025em',
+                color: 'var(--ink)'
+              }}
+            >
+              Agenda
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-display, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Figtree', sans-serif)",
+                fontSize: '18px',
+                fontWeight: 700,
+                letterSpacing: '-0.025em',
+                background: effectiveDark
+                  ? 'linear-gradient(135deg, #60A5FA 0%, #C084FC 100%)'
+                  : 'linear-gradient(135deg, #1D4ED8 0%, #7C3AED 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Inteligente
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-display, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif)",
+                fontSize: '10px',
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                padding: '2px 7px',
+                borderRadius: '6px',
+                background: effectiveDark
+                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.25) 100%)'
+                  : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(124, 58, 237, 0.15) 100%)',
+                border: effectiveDark
+                  ? '1px solid rgba(192, 132, 252, 0.45)'
+                  : '1px solid rgba(124, 58, 237, 0.35)',
+                color: effectiveDark ? '#C084FC' : '#6D28D9',
+                boxShadow: effectiveDark
+                  ? '0 0 12px rgba(147, 51, 234, 0.3)'
+                  : '0 1px 4px rgba(124, 58, 237, 0.15)',
+                lineHeight: '1.2',
+                textTransform: 'uppercase',
+                display: 'inline-flex',
+                alignItems: 'center'
+              }}
+            >
+              PRO
+            </span>
+          </div>
         </div>
 
         {/* Theme Toggle Button - Pinned to the Far Right of the screen */}
