@@ -47,9 +47,9 @@ export function clearStoredAuth() {
   } catch {}
 }
 
-export async function loginApi(email: string, password: string): Promise<{ token: string; user: UserProfile }> {
+export async function loginApi(login: string, password: string): Promise<{ token: string; user: UserProfile }> {
   try {
-    const { data } = await api.post('/auth/login', { email, password });
+    const { data } = await api.post('/auth/login', { login, password });
     setStoredAuth(data.token, data.user);
     return data;
   } catch (err: any) {
@@ -59,13 +59,14 @@ export async function loginApi(email: string, password: string): Promise<{ token
     }
     // Fallback offline PWA caso o backend ainda não esteja rodando no momento do login
     if (
-      (email.toLowerCase() === 'keidson@agendainteligente.com' || email.toLowerCase() === 'admin@agendainteligente.com') &&
+      (login.toLowerCase() === 'keidson@agendainteligente.com' ||
+        login.toLowerCase() === 'admin@agendainteligente.com') &&
       password === '123456'
     ) {
       const offlineUser: UserProfile = {
         id: 'usr_keidson_owner',
         name: 'Keidson',
-        email: email.toLowerCase(),
+        email: login.toLowerCase(),
         role: 'owner',
         theme: 'dark'
       };

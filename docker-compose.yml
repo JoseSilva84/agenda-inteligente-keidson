@@ -33,6 +33,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-agenda-inteligente-apple-jwt-secret-key-2026}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-30d}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      ADMIN_LOGIN: ${ADMIN_LOGIN:-keidson.rodrigues}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-troque_por_uma_senha_forte}
+      ADMIN_NAME: ${ADMIN_NAME:-Pr. Keidson Rodrigues}
 
 volumes:
   postgres_data:

@@ -46,20 +46,29 @@ export async function isPostgresConnected(): Promise<boolean> {
 }
 
 export const getAdminConfig = () => ({
-  email: (process.env.ADMIN_EMAIL || process.env.INITIAL_USER_EMAIL || 'keidson@agendainteligente.com').toLowerCase().trim(),
+  login: (
+    process.env.ADMIN_LOGIN ||
+    process.env.ADMIN_EMAIL ||
+    process.env.INITIAL_USER_EMAIL ||
+    'keidson.rodrigues'
+  )
+    .toLowerCase()
+    .trim(),
   password: process.env.ADMIN_PASSWORD || process.env.INITIAL_USER_PASSWORD || '123456',
   name: process.env.ADMIN_NAME || 'Pr. Keidson Rodrigues'
 });
 
 async function ensureDefaultUserPg() {
-  const { email, password, name } = getAdminConfig();
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const { login, password, name } = getAdminConfig();
+  const loginUser = await prisma.user.findUnique({ where: { email: login } });
+  const existing = loginUser || (await prisma.user.findFirst({ where: { role: 'owner' }, orderBy: { createdAt: 'asc' } }));
+
   if (!existing) {
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.user.create({
       data: {
         name,
-        email,
+        email: login,
         passwordHash,
         role: 'owner',
         theme: 'dark',
@@ -75,7 +84,19 @@ async function ensureDefaultUserPg() {
         }
       }
     });
+    return;
   }
+
+  const passwordMatches = await bcrypt.compare(password, existing.passwordHash);
+  await prisma.user.update({
+    where: { id: existing.id },
+    data: {
+      email: login,
+      name,
+      role: 'owner',
+      ...(passwordMatches ? {} : { passwordHash: await bcrypt.hash(password, 10) })
+    }
+  });
 }
 
 // Local JSON fallback store when PostgreSQL is offline during local dev
@@ -126,14 +147,16 @@ export function saveLocalStore(data: LocalStoreData) {
 
 function ensureDefaultUserLocal() {
   const store = loadLocalStore();
-  const { email, password, name } = getAdminConfig();
-  if (!store.users.some((u) => u.email === email)) {
+  const { login, password, name } = getAdminConfig();
+  const user = store.users.find((u) => u.email.toLowerCase() === login) || store.users.find((u) => u.role === 'owner');
+
+  if (!user) {
     const id = 'usr_keidson_owner';
     const passwordHash = bcrypt.hashSync(password, 10);
     store.users.push({
       id,
       name,
-      email,
+      email: login,
       passwordHash,
       role: 'owner',
       theme: 'dark',
@@ -148,5 +171,14 @@ function ensureDefaultUserLocal() {
       files: {}
     };
     saveLocalStore(store);
+    return;
   }
+
+  user.email = login;
+  user.name = name;
+  user.role = 'owner';
+  if (!bcrypt.compareSync(password, user.passwordHash)) {
+    user.passwordHash = bcrypt.hashSync(password, 10);
+  }
+  saveLocalStore(store);
 }

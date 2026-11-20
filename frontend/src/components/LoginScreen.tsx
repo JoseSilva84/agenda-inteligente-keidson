@@ -17,14 +17,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   effectiveDark,
   onToggleTheme
 }) => {
-  const [email, setEmail] = useState(() => {
+  const [login, setLogin] = useState(() => {
     try {
-      return localStorage.getItem('agenda-last-email') || '';
+      return localStorage.getItem('agenda-last-login') || localStorage.getItem('agenda-last-email') || '';
     } catch {
       return '';
     }
   });
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [avatarSrc, setAvatarSrc] = useState(getPastorAvatar());
@@ -39,16 +40,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
+    if (!login.trim() || !password) {
       setError('Por favor, informe seu login e senha.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      const res = await loginApi(email.trim(), password);
+      const res = await loginApi(login.trim(), password);
       try {
-        localStorage.setItem('agenda-last-email', email.trim());
+        localStorage.setItem('agenda-last-login', login.trim());
       } catch {}
       toast.success(`Bem-vindo, ${res.user.name}!`);
       onSuccess(res.user, res.token);
@@ -296,24 +297,62 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               Login:
               <input
                 type="text"
-                placeholder="Seu e-mail de acesso"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Seu nome de usuário"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
                 required
-                autoComplete="username email"
+                autoComplete="username"
               />
             </label>
 
             <label className="field">
               Senha:
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  style={{ width: '100%', paddingRight: '46px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '30px',
+                    height: '30px',
+                    display: 'grid',
+                    placeItems: 'center',
+                    padding: 0,
+                    border: 0,
+                    borderRadius: '8px',
+                    background: 'transparent',
+                    color: 'var(--muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {showPassword ? (
+                    <svg className="i" viewBox="0 0 24 24" style={{ width: 19, height: 19 }}>
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                      <path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5.5 0 9 5 9 5a15.4 15.4 0 0 1-2.1 2.7M6.6 6.6C4.3 8.1 3 10 3 10s3.5 5 9 5c1 0 1.9-.2 2.7-.5" />
+                    </svg>
+                  ) : (
+                    <svg className="i" viewBox="0 0 24 24" style={{ width: 19, height: 19 }}>
+                      <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5z" />
+                      <circle cx="12" cy="12" r="2.5" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </label>
 
             {error && (

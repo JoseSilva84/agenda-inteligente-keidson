@@ -8,19 +8,19 @@ const router = Router();
 // POST /api/auth/login
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const email = String(req.body.email || '').trim().toLowerCase();
+    const login = String(req.body.login || req.body.email || '').trim().toLowerCase();
     const password = String(req.body.password || '');
 
-    if (!email || !password) {
-      res.status(400).json({ error: 'Informe seu e-mail e senha.' });
+    if (!login || !password) {
+      res.status(400).json({ error: 'Informe seu login e senha.' });
       return;
     }
 
     const usePg = await isPostgresConnected();
     if (usePg) {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.user.findUnique({ where: { email: login } });
       if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-        res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+        res.status(401).json({ error: 'Login ou senha incorretos.' });
         return;
       }
       const token = signToken({ userId: user.id, email: user.email, name: user.name, role: user.role });
@@ -32,9 +32,9 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const store = loadLocalStore();
-    const user = store.users.find((u) => u.email.toLowerCase() === email);
+    const user = store.users.find((u) => u.email.toLowerCase() === login);
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+      res.status(401).json({ error: 'Login ou senha incorretos.' });
       return;
     }
 

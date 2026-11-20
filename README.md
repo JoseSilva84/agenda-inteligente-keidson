@@ -171,6 +171,8 @@ O projeto está 100% pronto para o **Railway**:
    - `JWT_SECRET`: uma chave secreta longa e segura
    - `JWT_EXPIRES_IN`: `30d`
    - `CORS_ORIGIN`: `*`
+   - `ADMIN_LOGIN`: nome de usuário do administrador
+   - `ADMIN_PASSWORD`: senha do administrador
 5. Na aba **Settings** do serviço, clique em **Generate Domain** na seção *Networking*.
 6. O Railway executará o `Dockerfile` multi-stage automaticamente, subindo a aplicação completa pronta para uso!
 
@@ -188,6 +190,8 @@ O projeto está 100% pronto para o **Railway**:
    JWT_SECRET=sua_chave_jwt_super_segura
    JWT_EXPIRES_IN=30d
    CORS_ORIGIN=*
+   ADMIN_LOGIN=keidson.rodrigues
+   ADMIN_PASSWORD=sua_senha_forte
    ```
 5. Configure seu domínio com SSL automático gerenciado pelo Traefik/Coolify.
 6. Clique em **Deploy**.
@@ -205,6 +209,8 @@ Todas as variáveis sensíveis ficam isoladas e protegidas via `.gitignore`. Ao 
 | `JWT_SECRET` | Chave criptográfica para autenticação segura | `chave_secreta_jwt_longa_2026` | Sim |
 | `JWT_EXPIRES_IN` | Validade da sessão do usuário | `30d` | Não (Padrão: `30d`) |
 | `CORS_ORIGIN` | Domínios com permissão de acesso à API | `*` ou `https://agenda.seudominio.com` | Não (Padrão: `*`) |
+| `ADMIN_LOGIN` | Nome de usuário da conta administradora | `keidson.rodrigues` | Sim |
+| `ADMIN_PASSWORD` | Senha da conta administradora | `uma_senha_forte` | Sim |
 | `GEMINI_API_KEY` | Chave de API Google Gemini para recursos da IA | `AIzaSy...` | Opcional |
 
 ---
