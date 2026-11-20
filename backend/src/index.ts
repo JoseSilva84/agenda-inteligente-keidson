@@ -38,9 +38,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/agenda', agendaRoutes);
 app.use('/api/assistant', assistantRoutes);
 
-// Em produção (ex.: container unificado no Coolify), serve o build estático do frontend PWA se existir
-const frontendDist = path.resolve(__dirname, '../../frontend/dist');
-if (fs.existsSync(frontendDist)) {
+// Em produção (ex.: container unificado no Coolify / Docker), serve o build estático do frontend PWA
+const candidatePaths = [
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(__dirname, '../frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist'),
+  path.resolve(process.cwd(), 'frontend/dist')
+];
+const frontendDist = candidatePaths.find((p) => fs.existsSync(p));
+if (frontendDist) {
   app.use(express.static(frontendDist));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
