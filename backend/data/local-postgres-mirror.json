@@ -1,0 +1,73 @@
+{
+  "users": [
+    {
+      "id": "usr_keidson_owner",
+      "name": "Keidson",
+      "email": "keidson@agendainteligente.com",
+      "passwordHash": "$2a$10$AzIsxY4b6eaIKKyVco1Cb.1t216xtsc6GQ9vWBbKpizfYhuD32G0u",
+      "role": "owner",
+      "theme": "light",
+      "createdAt": "2026-11-20T15:05:43.012Z"
+    }
+  ],
+  "userData": {
+    "usr_keidson_owner": {
+      "settings": {
+        "kind": "settings",
+        "mode": "confirm",
+        "workStart": "08:00",
+        "workEnd": "18:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "categories": [
+          {
+            "id": "trabalho",
+            "name": "Trabalho",
+            "color": "#2F5BEA"
+          },
+          {
+            "id": "estudos",
+            "name": "Estudos",
+            "color": "#8B5CF6"
+          },
+          {
+            "id": "saude",
+            "name": "Saúde",
+            "color": "#0E9F6E"
+          },
+          {
+            "id": "pessoal",
+            "name": "Pessoal",
+            "color": "#E8811A"
+          },
+          {
+            "id": "reunioes",
+            "name": "Reuniões",
+            "color": "#DB3F78"
+          },
+          {
+            "id": "aniversariantes",
+            "name": "Aniversariantes",
+            "color": "#E0A100"
+          },
+          {
+            "id": "diasprof",
+            "name": "Dias profissionais",
+            "color": "#0F8C8C"
+          }
+        ],
+        "specialCats": true
+      },
+      "items": [],
+      "travels": [],
+      "people": [],
+      "notifs": [],
+      "files": {}
+    }
+  }
+}

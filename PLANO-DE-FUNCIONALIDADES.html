@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Agenda Inteligente — Plano de Funcionalidades</title>
+<style>
+@page{size:A4;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#1e1b3a;--mut:#6b6a85;--p:#5b4bdb;--p2:#8b7bff;--soft:#f1efff;--g:#1fa971;--o:#f59e0b;--r:#ef4444;--b:#3b82f6}
+body{font-family:'Segoe UI',Arial,sans-serif;color:var(--ink);font-size:11.5pt;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;padding:18mm 17mm 14mm;page-break-after:always;position:relative;overflow:hidden}
+.page:last-child{page-break-after:auto}
+.cover{background:linear-gradient(150deg,#2a2178 0%,#5b4bdb 55%,#8b7bff 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between}
+.cover h1{font-size:38pt;line-height:1.08;margin:10mm 0 6mm}
+.cover .tag{font-size:13pt;opacity:.92;max-width:130mm}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10mm}
+.chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:99px;font-size:10.5pt}
+.mock{background:#fff;border-radius:14px;padding:12px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.mock .row{display:grid;grid-template-columns:34px repeat(5,1fr);gap:4px;font-size:8pt;margin-bottom:4px}
+.mock .h{color:var(--mut);text-align:center;font-weight:600}
+.ev{border-radius:6px;padding:3px 5px;font-size:7.5pt;color:#fff;font-weight:600}
+.e1{background:var(--p)}.e2{background:var(--g)}.e3{background:var(--o)}.e4{background:var(--b)}.e5{background:#ec4899}.em{background:#f4f3fa}
+.brand{font-weight:700;letter-spacing:.5px;font-size:10pt;opacity:.9}
+h2{font-size:21pt;color:var(--p);margin-bottom:2mm;display:flex;align-items:center;gap:10px}
+h2 .n{background:var(--p);color:#fff;border-radius:10px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;font-size:15pt}
+.lead{color:var(--mut);margin-bottom:6mm;font-size:12pt}
+h3{font-size:13pt;margin:5mm 0 2mm}
+.grid{display:grid;gap:10px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+.card{border:1px solid #e6e4f5;background:#fff;border-radius:14px;padding:12px 14px}
+.card.soft{background:var(--soft);border-color:transparent}
+.card b{display:block;margin-bottom:2px}
+.card small,.small{color:var(--mut);font-size:9.5pt}
+.ico{font-size:20pt;line-height:1;margin-bottom:4px}
+ul{padding-left:18px}li{margin:2px 0}
+table{width:100%;border-collapse:collapse;font-size:10.5pt;margin:2mm 0}
+th{background:var(--p);color:#fff;text-align:left;padding:7px 10px}
+th:first-child{border-radius:10px 0 0 0}th:last-child{border-radius:0 10px 0 0}
+td{padding:7px 10px;border-bottom:1px solid #eceaf8}
+tr:nth-child(even) td{background:#faf9ff}
+.flow{display:flex;align-items:stretch;gap:6px;margin:4mm 0}
+.step{flex:1;background:var(--soft);border-radius:12px;padding:10px;text-align:center;font-size:10pt}
+.step b{display:block;color:var(--p)}
+.arrow{align-self:center;color:var(--p);font-size:18pt}
+.chat{background:#f6f5fc;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:7px}
+.bub{max-width:82%;padding:8px 12px;border-radius:14px;font-size:10.5pt}
+.me{align-self:flex-end;background:var(--p);color:#fff;border-bottom-right-radius:4px}
+.ai{align-self:flex-start;background:#fff;border:1px solid #e6e4f5;border-bottom-left-radius:4px}
+.wa{background:#e6f6e9;border-radius:14px;padding:10px;max-width:92%}
+.wa .in{background:#fff;border-radius:4px 14px 14px 14px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,.1);font-size:10.5pt}
+.wa .hd{color:#128c7e;font-weight:700;margin-bottom:3px}
+.stat{text-align:center}.stat .v{font-size:24pt;font-weight:700}
+.bars{display:flex;align-items:flex-end;gap:10px;height:90px;margin-top:6px}
+.bars div{flex:1;background:linear-gradient(var(--p2),var(--p));border-radius:6px 6px 0 0;color:#fff;text-align:center;font-size:8.5pt;padding-top:2px}
+.bl{display:flex;gap:10px;color:var(--mut);font-size:9pt}.bl span{flex:1;text-align:center}
+.tl{border-left:3px solid var(--p2);margin-left:10px;padding-left:18px}
+.tl .it{position:relative;margin-bottom:5mm}
+.tl .it:before{content:"";position:absolute;left:-26px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--p);border:3px solid #fff;box-shadow:0 0 0 2px var(--p2)}
+.price{font-size:20pt;font-weight:700;color:var(--p)}
+.badge{display:inline-block;font-size:8.5pt;padding:2px 9px;border-radius:99px;font-weight:700;color:#fff}
+.b1{background:var(--g)}.b2{background:var(--p)}.b3{background:#0f9d8a}.b4{background:var(--mut)}
+.foot{position:absolute;bottom:8mm;left:17mm;right:17mm;display:flex;justify-content:space-between;color:var(--mut);font-size:8.5pt;border-top:1px solid #eceaf8;padding-top:3mm}
+.note{background:#fff8e6;border-left:4px solid var(--o);padding:8px 12px;border-radius:8px;font-size:10pt;margin-top:4mm}
+</style></head><body>
+
+<!-- CAPA -->
+<section class="page cover">
+  <div class="brand">AGENDA INTELIGENTE</div>
+  <div>
+    <div class="tag">PLANO DE FUNCIONALIDADES</div>
+    <h1>Sua agenda organizada,<br>inteligente e<br>sempre com você.</h1>
+    <div class="tag">Agenda bonita, arquivos num só lugar, assistente de IA que conversa com você e lembretes automáticos no WhatsApp.</div>
+    <div class="chips"><span class="chip">📅 Agenda visual</span><span class="chip">📎 PDFs, fotos e vídeos</span><span class="chip">🤖 IA conversacional</span><span class="chip">💬 WhatsApp automático</span></div>
+  </div>
+  <div>
+    <div class="mock">
+      <div class="row"><div></div><div class="h">Seg</div><div class="h">Ter</div><div class="h">Qua</div><div class="h">Qui</div><div class="h">Sex</div></div>
+      <div class="row"><div class="h">9h</div><div class="ev e1">Reunião</div><div class="ev em"></div><div class="ev e2">Estudar</div><div class="ev em"></div><div class="ev e4">Relatório</div></div>
+      <div class="row"><div class="h">11h</div><div class="ev em"></div><div class="ev e3">Cliente</div><div class="ev em"></div><div class="ev e5">Academia</div><div class="ev em"></div></div>
+      <div class="row"><div class="h">14h</div><div class="ev e2">Inglês</div><div class="ev em"></div><div class="ev e1">Projeto</div><div class="ev em"></div><div class="ev e3">Revisão</div></div>
+    </div>
+    <div class="small" style="color:#fff;opacity:.85;margin-top:8px">Versão 1.0 · Novembro de 2026 · Imagem ilustrativa</div>
+  </div>
+</section>
+
+<!-- 1 e 2 -->
+<section class="page">
+  <h2><span class="n">1</span>O que é a Agenda Inteligente?</h2>
+  <p class="lead">Uma agenda online que funciona no computador, tablet e celular. Mantém a organização do Excel — dias, horários e blocos coloridos — mas faz muito mais por você.</p>
+  <div class="grid g2">
+    <div class="card soft"><div class="ico">📅</div><b>Organiza</b><small>Dia, semana e mês, com cores e categorias.</small></div>
+    <div class="card soft"><div class="ico">📎</div><b>Guarda</b><small>PDFs, imagens, vídeos e anotações dentro de cada atividade.</small></div>
+    <div class="card soft"><div class="ico">🔁</div><b>Remarca sozinha</b><small>O que ficou pendente vai para a próxima semana.</small></div>
+    <div class="card soft"><div class="ico">🤖</div><b>Conversa</b><small>Pergunte à IA sobre seus compromissos.</small></div>
+    <div class="card soft"><div class="ico">💬</div><b>Avisa</b><small>Lembretes automáticos no seu WhatsApp.</small></div>
+    <div class="card soft"><div class="ico">📊</div><b>Resume</b><small>Relatório semanal do que foi feito e do que ficou.</small></div>
+  </div>
+
+  <h2 style="margin-top:9mm"><span class="n">2</span>Para o usuário</h2>
+  <p class="lead">Tudo o que você poderá fazer no dia a dia.</p>
+  <h3>📅 Agenda interativa</h3>
+  <div class="grid g2">
+    <ul><li>Ver por <b>dia, semana ou mês</b></li><li>Criar, editar e apagar atividades</li><li><b>Arrastar</b> para outro horário</li><li>Escolher <b>cores e categorias</b></li></ul>
+    <ul><li>Atividades <b>recorrentes</b> (toda segunda…)</li><li>Marcar <b>concluída, pendente ou cancelada</b></li><li><b>Pesquisar</b> o passado e o futuro</li><li>Funciona no celular como aplicativo</li></ul>
+  </div>
+  <h3>📎 Arquivos dentro de cada atividade</h3>
+  <table><tr><th>Tipo</th><th>O que dá para fazer</th></tr>
+  <tr><td>📄 PDF</td><td>Anexar e abrir sem sair da agenda</td></tr>
+  <tr><td>🖼️ Imagens (JPG, PNG, WebP)</td><td>Anexar e visualizar</td></tr>
+  <tr><td>🎬 Vídeos (MP4, WebM)</td><td>Anexar e assistir na própria tela</td></tr>
+  <tr><td>📝 Documentos (DOCX, TXT)</td><td>Anexar e baixar</td></tr>
+  <tr><td>🔗 Links e anotações</td><td>Guardar sites, reuniões e observações</td></tr></table>
+  <div class="foot"><span>Agenda Inteligente · Plano de Funcionalidades</span><span>2</span></div>
+</section>
+
+<!-- 3 pendências + relatório -->
+<section class="page">
+  <h2><span class="n">3</span>Pendências resolvidas sozinhas</h2>
+  <p class="lead">Não deu tempo de fazer? A agenda cuida disso para você.</p>
+  <div class="flow">
+    <div class="step"><b>1. Não concluída</b>Sexta, 16h</div><div class="arrow">→</div>
+    <div class="step"><b>2. Verifica</b>Prioridade e horários livres</div><div class="arrow">→</div>
+    <div class="step"><b>3. Reagenda</b>Próxima semana, com histórico</div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><b>⚡ Modo automático</b><small>A atividade é transferida sem você precisar fazer nada.</small></div>
+    <div class="card"><b>✋ Modo com confirmação</b><small>A agenda sugere o novo horário e você aprova.</small></div>
+  </div>
+  <p class="small" style="margin-top:2mm">Prazos fixos e conflitos de horário são sinalizados.</p>
+
+  <h2 style="margin-top:9mm"><span class="n">4</span>Avisos e resumo semanal</h2>
+  <p class="lead">Acompanhe sua semana de forma simples. No fim dela, você recebe um relatório.</p>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="card stat"><div class="v" style="color:var(--p)">24</div><small>Programadas</small></div>
+    <div class="card stat"><div class="v" style="color:var(--g)">18</div><small>Concluídas</small></div>
+    <div class="card stat"><div class="v" style="color:var(--o)">4</div><small>Pendentes</small></div>
+    <div class="card stat"><div class="v" style="color:var(--r)">2</div><small>Canceladas</small></div>
+  </div>
+  <div class="card" style="margin-top:10px"><b>Produtividade da semana</b><small>Atividades concluídas por dia (exemplo)</small>
+    <div class="bars"><div style="height:100%">5</div><div style="height:80%">4</div><div style="height:60%">3</div><div style="height:80%">4</div><div style="height:40%">2</div></div>
+    <div class="bl"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span></div></div>
+  <p class="small" style="margin-top:2mm">Dados ilustrativos. O relatório pode ser visto no painel, baixado em PDF ou enviado por WhatsApp.</p>
+
+  <h3>🔔 Central de notificações</h3>
+  <p>Avisos dentro do sistema e no celular ou computador, mesmo com a agenda fechada.</p>
+  <div class="foot"><span>Agenda Inteligente · Plano de Funcionalidades</span><span>3</span></div>
+</section>
+
+<!-- 5 IA + 6 WhatsApp -->
+<section class="page">
+  <h2><span class="n">5</span>IA conversacional <span class="badge b2" style="font-size:9pt">Fase 2</span></h2>
+  <p class="lead">Converse com a sua agenda como se fosse uma assistente pessoal.</p>
+  <div class="chat">
+    <div class="bub me">O que deixei de fazer esta semana?</div>
+    <div class="bub ai">Você tem 4 pendências: <b>Relatório</b> (qua), <b>Ligar para o cliente</b> (qui), <b>Revisão</b> e <b>Estudar inglês</b> (sex). Quer que eu passe para a próxima semana?</div>
+    <div class="bub me">Sim, de manhã se possível.</div>
+    <div class="bub ai">Pronto! Reagendei para segunda e terça, entre 9h e 11h. ✅</div>
+  </div>
+  <h3>Você poderá perguntar</h3>
+  <div class="grid g2">
+    <div class="card soft small">“Quais atividades tenho amanhã?”</div>
+    <div class="card soft small">“Quais horários estão livres na sexta?”</div>
+    <div class="card soft small">“Organize minhas pendências da próxima semana.”</div>
+    <div class="card soft small">“Faça um resumo da minha produtividade no mês.”</div>
+  </div>
+  <div class="note">🔒 <b>Segurança:</b> a IA só vê os <b>seus</b> dados. Antes de apagar compromissos ou mudar vários horários, ela <b>sempre pede sua confirmação</b>. No futuro, poderá também responder sobre o conteúdo dos seus documentos.</div>
+
+  <h2 style="margin-top:8mm"><span class="n">6</span>WhatsApp automático <span class="badge b3" style="font-size:9pt">Fase 3</span></h2>
+  <p class="lead">Lembretes direto no seu WhatsApp, sem precisar abrir a agenda.</p>
+  <div class="grid g2" style="align-items:center">
+    <div class="wa"><div class="in"><div class="hd">Agenda Inteligente</div>Olá! Você tem uma atividade hoje.<br><b>Atividade:</b> Estudar inglês<br><b>Horário:</b> 14h às 15h<br><small>Acesse sua agenda para acompanhar.</small></div></div>
+    <ul><li>Aviso <b>10 min, 30 min, 1 h ou 1 dia</b> antes</li><li><b>Resumo semanal</b> no WhatsApp</li><li>Só com a <b>sua autorização</b></li><li>Usa a <b>API oficial</b> do WhatsApp</li></ul>
+  </div>
+  <p class="small" style="margin-top:2mm">Os custos das mensagens dependem do volume enviado.</p>
+  <div class="foot"><span>Agenda Inteligente · Plano de Funcionalidades</span><span>4</span></div>
+</section>
+
+<!-- 7 dono + 8 segurança -->
+<section class="page">
+  <h2><span class="n">7</span>Para o dono: painel administrativo</h2>
+  <p class="lead">Um painel separado para você gerenciar o sistema com tranquilidade.</p>
+  <table><tr><th>Área</th><th>O que você controla</th></tr>
+  <tr><td>👥 Usuários</td><td>Cadastrar, ativar, bloquear e definir permissões</td></tr>
+  <tr><td>💳 Assinaturas</td><td>Planos, pagamentos e vencimentos</td></tr>
+  <tr><td>💾 Armazenamento</td><td>Espaço usado e limites por plano</td></tr>
+  <tr><td>🤖 Inteligência artificial</td><td>Consumo, créditos e limites</td></tr>
+  <tr><td>💬 WhatsApp</td><td>Mensagens enviadas e custos</td></tr>
+  <tr><td>🩺 Monitoramento</td><td>Erros, desempenho e disponibilidade</td></tr>
+  <tr><td>📈 Relatórios</td><td>Usuários ativos, receita e uso</td></tr></table>
+  <div class="note">O dono <b>não vê livremente</b> os compromissos e documentos privados dos usuários. O acesso segue permissões e a LGPD.</div>
+  <p style="margin-top:3mm">Se desejar, o sistema pode ser vendido futuramente por <b>assinatura mensal</b> a outros usuários.</p>
+
+  <h2 style="margin-top:8mm"><span class="n">8</span>Segurança e privacidade</h2>
+  <div class="grid g2">
+    <div class="card"><b>🔐 Login seguro</b><small>Conexão protegida (HTTPS).</small></div>
+    <div class="card"><b>🧱 Dados separados</b><small>Cada usuário só acessa o que é seu.</small></div>
+    <div class="card"><b>💾 Cópias de segurança</b><small>Backups periódicos.</small></div>
+    <div class="card"><b>📜 LGPD</b><small>Política de privacidade e exclusão de dados.</small></div>
+  </div>
+
+  <h2 style="margin-top:8mm"><span class="n">9</span>Como será a entrega</h2>
+  <div class="tl">
+    <div class="it"><b>Fase 1 · Agenda</b><br><small>Agenda dia/semana/mês, arquivos, recorrência, pendências automáticas, notificações e resumo semanal.</small></div>
+    <div class="it"><b>Fase 2 · IA conversacional</b><br><small>Assistente que conversa e organiza a agenda.</small></div>
+    <div class="it"><b>Fase 3 · WhatsApp + painel completo</b><br><small>Lembretes, resumo semanal e administração.</small></div>
+    <div class="it"><b>Fase 4 · Evoluções</b><br><small>Busca dentro dos arquivos, Google Calendar e comandos de voz.</small></div>
+  </div>
+  <div class="foot"><span>Agenda Inteligente · Plano de Funcionalidades</span><span>5</span></div>
+</section>
+
+<!-- 10 investimento -->
+<section class="page">
+  <h2><span class="n">10</span>Prazos</h2><p class="lead">Uma estimativa clara de cada etapa do desenvolvimento.</p>
+  <table><tr><th>Etapa</th><th>Entregas</th><th>Prazo</th></tr>
+  <tr><td>1</td><td>Interface, login e agenda</td><td>2–3 semanas</td></tr>
+  <tr><td>2</td><td>Arquivos, recorrência e pendências</td><td>2–3 semanas</td></tr>
+  <tr><td>3</td><td>Notificações e relatórios</td><td>1–2 semanas</td></tr>
+  <tr><td>4</td><td>IA conversacional</td><td>2–3 semanas</td></tr>
+  <tr><td>5</td><td>WhatsApp e painel administrativo</td><td>2–3 semanas</td></tr>
+  <tr><td>6</td><td>Testes, segurança e publicação</td><td>1–2 semanas</td></tr></table>
+  <p><b>Fase 1</b> em cerca de 8 a 10 semanas · <b>sistema completo</b> em 14 a 16 semanas.</p>
+  <div class="note"><b>Bom saber:</b> para vídeos grandes haverá limite de tamanho e de espaço de armazenamento, para manter o sistema rápido e estável.</div>
+
+  <h2 style="margin-top:8mm"><span class="n">11</span>Próximos passos</h2>
+  <div class="flow">
+    <div class="step"><b>1</b>Aprovar o escopo</div><div class="arrow">→</div>
+    <div class="step"><b>2</b>Assinar o contrato</div><div class="arrow">→</div>
+    <div class="step"><b>3</b>Aprovar o protótipo</div><div class="arrow">→</div>
+    <div class="step"><b>4</b>Desenvolvimento e entrega</div>
+  </div>
+  <p class="small" style="margin-top:6mm">Imagens e números são ilustrativos; as telas finais podem variar. Documento de planejamento funcional — Versão 1.0.</p>
+  <div class="foot"><span>Agenda Inteligente · Plano de Funcionalidades</span><span>6</span></div>
+</section>
+</body></html>

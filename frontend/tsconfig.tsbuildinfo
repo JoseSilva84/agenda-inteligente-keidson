@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/loginscreen.tsx","./src/engine/agendacore.ts","./src/engine/agendaevents.ts","./src/engine/agendahelpers.ts","./src/engine/agendamodals.ts","./src/engine/agendarenderers.ts","./src/engine/agendastorage.ts","./src/services/api.ts","./src/types/agenda.ts"],"version":"5.9.3"}
