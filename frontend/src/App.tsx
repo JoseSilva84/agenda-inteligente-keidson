@@ -27,6 +27,7 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
 }) => {
   const qTimerRef = useRef<any>(null);
   const utilityMenuRef = useRef<HTMLDetailsElement>(null);
+  const utilityMenuTimerRef = useRef<any>(null);
 
   useEffect(() => {
     initAgendaEngine(onSetTheme);
@@ -36,15 +37,49 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
   useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (utilityMenuRef.current && !utilityMenuRef.current.contains(event.target as Node)) {
+        if (utilityMenuTimerRef.current) {
+          clearTimeout(utilityMenuTimerRef.current);
+          utilityMenuTimerRef.current = null;
+        }
         utilityMenuRef.current.open = false;
       }
     };
     document.addEventListener('click', closeOnOutsideClick);
-    return () => document.removeEventListener('click', closeOnOutsideClick);
+    return () => {
+      document.removeEventListener('click', closeOnOutsideClick);
+      if (utilityMenuTimerRef.current) {
+        clearTimeout(utilityMenuTimerRef.current);
+      }
+    };
   }, []);
 
   const closeUtilityMenu = () => {
+    if (utilityMenuTimerRef.current) {
+      clearTimeout(utilityMenuTimerRef.current);
+      utilityMenuTimerRef.current = null;
+    }
     if (utilityMenuRef.current) utilityMenuRef.current.open = false;
+  };
+
+  const handleMenuMouseEnter = () => {
+    if (utilityMenuTimerRef.current) {
+      clearTimeout(utilityMenuTimerRef.current);
+      utilityMenuTimerRef.current = null;
+    }
+    if (utilityMenuRef.current) {
+      utilityMenuRef.current.open = true;
+    }
+  };
+
+  const handleMenuMouseLeave = () => {
+    if (utilityMenuTimerRef.current) {
+      clearTimeout(utilityMenuTimerRef.current);
+    }
+    utilityMenuTimerRef.current = setTimeout(() => {
+      if (utilityMenuRef.current) {
+        utilityMenuRef.current.open = false;
+      }
+    }, 180);
   };
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,6 +141,8 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
           <details
             className="utility-menu"
             ref={utilityMenuRef}
+            onMouseEnter={handleMenuMouseEnter}
+            onMouseLeave={handleMenuMouseLeave}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
                 closeUtilityMenu();

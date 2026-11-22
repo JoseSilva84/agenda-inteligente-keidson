@@ -881,7 +881,9 @@ export function gridHTML(days: string[]) {
   const head = `<div class="g-head"><div class="g-gut">SCHEDULES</div>${days
     .map(
       (d) =>
-        `<button class="g-day ${d === t ? 'is-today' : ''}" data-goto="${d}" aria-label="${fmtDL(d)}"><span>${
+        `<button class="g-day ${d === t ? 'is-today' : ''}${
+          d === S.cursor ? ' is-selected' : ''
+        }" data-goto="${d}" aria-label="${fmtDL(d)}"><span>${
           WD_EN[dow(d)]
         } - ${fmtD(d)}</span></button>`
     )

@@ -784,7 +784,7 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
     const go = t.closest('[data-goto]') as HTMLElement | null;
     if (go) {
       S.cursor = go.dataset.goto;
-      if (!go.closest('.mini')) S.view = 'day';
+      S.view = 'day';
       S.tab = 'agenda';
       render();
       return;

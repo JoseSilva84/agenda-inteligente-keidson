@@ -426,7 +426,7 @@ svg.i {
   right: -6px;
 }
 .utility-menu { position: relative; flex: none; }
-.utility-trigger { list-style: none; user-select: none; }
+.utility-trigger { list-style: none; user-select: none; cursor: pointer; }
 .utility-trigger::-webkit-details-marker { display: none; }
 .utility-trigger .badge { position: absolute; top: -6px; right: -6px; }
 .utility-panel {
@@ -440,6 +440,25 @@ svg.i {
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  animation: utilityFadeIn 0.15s ease-out;
+}
+.utility-panel::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+}
+@keyframes utilityFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .utility-panel button {
   display: flex;
@@ -454,6 +473,7 @@ svg.i {
   background: transparent;
   color: var(--ink);
   text-align: left;
+  cursor: pointer;
 }
 .utility-panel .utility-item-icon {
   width: 17px;
@@ -823,6 +843,11 @@ svg.i {
 .g-day.is-today span {
   background: var(--accent);
   color: var(--accent-ink);
+}
+.g-day.is-selected:not(.is-today) span {
+  background: var(--soft);
+  color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent);
 }
 .g-body {
   display: grid;
