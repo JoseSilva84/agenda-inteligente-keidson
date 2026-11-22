@@ -657,7 +657,7 @@ export function sideHTML() {
   const pc = S.loaded ? pendingOccs().length : 0;
   const store =
     S.storage === 'postgresql'
-      ? 'Salvo no PostgreSQL (Prisma · JWT)'
+      ? 'Salvo no banco de dados'
       : S.storage === 'cloud'
       ? 'Sincronizado na sua conta'
       : S.storage === 'local'

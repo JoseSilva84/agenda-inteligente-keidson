@@ -64,72 +64,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   return (
     <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        background: 'var(--bg)',
-        color: 'var(--ink)',
-        position: 'relative',
-        overflow: 'hidden',
-        padding: '16px'
-      }}
+      className="login-screen"
     >
       {/* Ambient Apple Mesh Glow */}
       <div
+        className="login-ambient-glow"
         aria-hidden="true"
         style={{
-          position: 'absolute',
-          top: '-16%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '740px',
-          height: '420px',
-          borderRadius: '50%',
           background: effectiveDark
             ? 'radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(42, 76, 219, 0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          filter: 'blur(50px)'
+            : 'radial-gradient(circle, rgba(42, 76, 219, 0.08) 0%, transparent 70%)'
         }}
       />
 
-      {/* Top Header Bar - Centered Brand with theme toggle pinned to far right */}
-      <header
-        style={{
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '100%',
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '14px 16px',
-          zIndex: 10
-        }}
-      >
+      {/* On iPhone the theme control sits above the brand; iPad/MacBook keep a horizontal header. */}
+      <header className="login-header">
         {/* Centered Brand: Beautiful Glowing Icon + Title with NO background card */}
         <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '12px',
-            userSelect: 'none'
-          }}
+          className="login-brand"
         >
           <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '11px',
-              background: 'linear-gradient(135deg, #2A4CDB 0%, #7C3AED 100%)',
-              boxShadow: '0 4px 18px rgba(42, 76, 219, 0.45)',
-              display: 'grid',
-              placeItems: 'center',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
-              flexShrink: 0
-            }}
+            className="login-brand-mark"
           >
             <svg
               className="i"
@@ -140,15 +95,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <div className="login-brand-title">
             <span
-              style={{
-                fontFamily: "var(--font-display, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Figtree', sans-serif)",
-                fontSize: '18px',
-                fontWeight: 800,
-                letterSpacing: '-0.025em',
-                color: 'var(--ink)'
-              }}
+              className="login-brand-agenda"
             >
               Agenda
             </span>
@@ -161,23 +110,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         </div>
 
-        {/* Theme Toggle Button - Pinned to the Far Right of the screen */}
-        <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }}>
+        <div className="login-theme-slot">
           <button
             type="button"
-            className="iconbtn"
+            className="iconbtn login-theme-toggle"
             onClick={onToggleTheme}
             title={effectiveDark ? 'Mudar para modo claro (Light)' : 'Mudar para modo escuro (Dark)'}
             aria-label="Alternar tema claro e escuro"
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'var(--surface-glass)',
-              border: '1px solid var(--line)',
-              backdropFilter: 'var(--apple-blur)',
-              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.15)'
-            }}
           >
             {effectiveDark ? (
               <svg className="i" viewBox="0 0 24 24" style={{ width: 19, height: 19 }}>
@@ -194,45 +133,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       </header>
 
       {/* Main Login Card */}
-      <main
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          flex: 1,
-          position: 'relative',
-          zIndex: 2,
-          padding: '20px 0'
-        }}
-      >
+      <main className="login-main">
         <motion.div
           initial={{ opacity: 0, y: 18, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="card"
+          className="card login-card"
           style={{
-            width: 'min(430px, 100%)',
-            padding: '34px 30px',
-            borderRadius: '26px',
-            background: 'var(--surface-glass)',
-            backdropFilter: 'var(--apple-blur)',
-            WebkitBackdropFilter: 'var(--apple-blur)',
             boxShadow: effectiveDark
               ? '0 24px 60px rgba(0, 0, 0, 0.42)'
-              : '0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(15, 23, 42, 0.06)',
-            border: '1px solid var(--line)'
+              : '0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(15, 23, 42, 0.06)'
           }}
         >
           {/* Pastor Photo with Continuous Looping Border Effect */}
-          <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+          <div className="login-identity">
             <div
-              style={{
-                position: 'relative',
-                width: '124px',
-                height: '124px',
-                margin: '0 auto 16px',
-                display: 'grid',
-                placeItems: 'center'
-              }}
+              className="login-avatar-frame"
             >
               {/* Outer Glowing Breathing Aura (Loop) */}
               <div
@@ -287,12 +203,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </div>
 
             {/* Title: Acesso */}
-            <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
+            <h1 className="login-person-name">
               Pr. Keidson Rodrigues
             </h1>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <form className="login-form" onSubmit={handleSubmit}>
             <label className="field">
               Login:
               <input
@@ -406,16 +322,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           {/* Apple Devices Footer Badge */}
           <div
             style={{
-              marginTop: '22px',
-              paddingTop: '16px',
-              borderTop: '1px solid var(--line)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              color: 'var(--muted)',
-              letterSpacing: '0.02em'
+              color: 'var(--muted)'
             }}
+            className="login-device-note"
           >
             <span>MacBook · iPhone · iPad</span>
           </div>
@@ -423,16 +332,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       </main>
 
       {/* Bottom Info - Copyright Pr. Keidson Rodrigues */}
-      <footer
-        style={{
-          textAlign: 'center',
-          fontSize: '12.5px',
-          color: 'var(--muted)',
-          position: 'relative',
-          zIndex: 2,
-          padding: '8px 0'
-        }}
-      >
+      <footer className="login-footer">
         © 2026 Pr. Keidson Rodrigues. Todos os direitos reservados.
       </footer>
     </div>

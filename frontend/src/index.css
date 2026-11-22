@@ -82,6 +82,153 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Login shell: Apple safe areas, dynamic viewport and device-specific composition. */
+.login-screen {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--bg);
+  color: var(--ink);
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+}
+.login-ambient-glow {
+  position: absolute;
+  top: -16%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(740px, 120vw);
+  height: 420px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(50px);
+}
+.login-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  z-index: 10;
+}
+.login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+.login-brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #2A4CDB 0%, #7C3AED 100%);
+  box-shadow: 0 4px 18px rgba(42, 76, 219, 0.45);
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+.login-brand-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.login-brand-agenda {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.login-theme-slot {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.login-theme-toggle {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 13px;
+  background: var(--surface-glass);
+  border: 1px solid var(--line);
+  backdrop-filter: var(--apple-blur);
+  -webkit-backdrop-filter: var(--apple-blur);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+.login-main {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  padding: 20px 0;
+}
+.login-card {
+  width: min(430px, 100%);
+  padding: 34px 30px;
+  border-radius: 26px;
+  background: var(--surface-glass);
+  backdrop-filter: var(--apple-blur);
+  -webkit-backdrop-filter: var(--apple-blur);
+  border: 1px solid var(--line);
+}
+.login-identity {
+  text-align: center;
+  margin-bottom: 22px;
+}
+.login-avatar-frame {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+}
+.login-person-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.login-device-note {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.login-footer {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  position: relative;
+  z-index: 2;
+  padding: 8px 0;
+}
+
 /* Apple macOS / iOS custom scrollbar */
 ::-webkit-scrollbar {
   width: 7px;
@@ -2116,21 +2263,13 @@ body.pasting .clipchip {
   .newlbl { display: none; }
 }
 @media (max-width: 900px) {
+  .tabs { display: none; }
   .agenda { grid-template-columns: 1fr; }
   .side { display: none; }
   .search { width: 150px; }
   .two { grid-template-columns: 1fr; }
   .prow { grid-template-columns: 1fr; }
   .prow-act { justify-content: flex-start; }
-}
-@media (max-width: 720px) {
-  .tabs { display: none; }
-  .top { padding: 8px 12px; gap: 8px; }
-  .brand span { display: none; }
-  .search { width: auto; flex: 1; }
-  .top-r { flex: 1; }
-  .newlbl { display: none; }
-  .side-tg { display: none; }
   .bottomnav {
     display: flex;
     border-top: 1px solid var(--line);
@@ -2147,6 +2286,14 @@ body.pasting .clipchip {
     padding: 7px 2px;
     border-radius: 0;
   }
+}
+@media (max-width: 720px) {
+  .top { padding: 8px 12px; gap: 8px; }
+  .brand span { display: none; }
+  .search { width: auto; flex: 1; }
+  .top-r { flex: 1; }
+  .newlbl { display: none; }
+  .side-tg { display: none; }
   .tiles { grid-template-columns: repeat(2, 1fr); }
   .flow { grid-template-columns: 1fr; }
   .form-grid, .row3 { grid-template-columns: 1fr 1fr; }
@@ -2161,6 +2308,94 @@ body.pasting .clipchip {
   .m-head .full { display: none; }
   .m-head .short { display: inline; }
   .hint { display: none; }
+}
+
+/* iPad portrait/landscape: spacious touch layout without changing the desktop hierarchy. */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .login-screen {
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+  }
+  .login-card { width: min(460px, 100%); }
+  .login-header { max-width: 900px; }
+}
+
+/* iPhone: the indicated theme icon moves above the Agenda Inteligente Pro name. */
+@media (max-width: 600px) {
+  .login-screen {
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+  }
+  .login-header {
+    flex-direction: column;
+    gap: 9px;
+    padding: 8px 0 6px;
+  }
+  .login-theme-slot {
+    position: static;
+    order: -1;
+    transform: none;
+  }
+  .login-brand { gap: 9px; }
+  .login-brand-title { gap: 5px; }
+  .login-brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  .login-brand-agenda,
+  .login-brand-title .brand-accent-text { font-size: 16px; }
+  .login-brand-title .brand-pro-badge {
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+  .login-main { padding: 12px 0; }
+  .login-card {
+    width: min(390px, 100%);
+    padding: 28px 22px;
+    border-radius: 24px;
+  }
+  .login-avatar-frame {
+    width: 112px;
+    height: 112px;
+    margin-bottom: 14px;
+  }
+  .login-person-name { font-size: 22px; }
+  .login-footer {
+    font-size: 12px;
+    padding: 7px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-grid,
+  .row3 { grid-template-columns: 1fr; }
+  .tiles { grid-template-columns: 1fr; }
+}
+
+/* Compact iPhones and landscape mode: keep every control reachable without clipping. */
+@media (max-width: 600px) and (max-height: 760px) {
+  .login-header { gap: 6px; padding-top: 4px; }
+  .login-theme-toggle {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .login-main { padding: 8px 0; }
+  .login-card { padding: 22px 20px; }
+  .login-identity { margin-bottom: 16px; }
+  .login-avatar-frame {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 12px;
+  }
+  .login-form { gap: 11px; }
+  .login-device-note { margin-top: 16px; padding-top: 12px; }
+  .login-footer { padding: 4px; }
 }
 
 .brand span {
