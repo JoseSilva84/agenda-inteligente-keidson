@@ -844,10 +844,32 @@ svg.i {
   background: var(--accent);
   color: var(--accent-ink);
 }
+.g-day.is-selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+  border-bottom: 3px solid var(--accent) !important;
+}
 .g-day.is-selected:not(.is-today) span {
-  background: var(--soft);
-  color: var(--accent);
-  box-shadow: 0 0 0 1.5px var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  color: var(--accent) !important;
+  border: 2px solid var(--accent) !important;
+  border-radius: 6px !important;
+  padding: 2px 7px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 40%, transparent) !important;
+}
+.g-day.is-selected.is-today span {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+  border-radius: 6px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 60%, transparent) !important;
+}
+.g-col.is-selected {
+  background: color-mix(in srgb, var(--accent) 5%, transparent) !important;
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--accent) 25%, transparent),
+              inset -1px 0 0 color-mix(in srgb, var(--accent) 25%, transparent) !important;
 }
 .g-body {
   display: grid;

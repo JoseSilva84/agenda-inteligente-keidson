@@ -2242,7 +2242,7 @@ document.addEventListener('click', async e => {
   const gm = t.closest('[data-gomonth]'); if (gm) { S.cursor = gm.dataset.gomonth; S.view = 'month'; render(); return; }
   const pd = t.closest('[data-pday]'); if (pd) { openPeopleDay(pd.dataset.pday, pd.dataset.ptype); return; }
   const trb = t.closest('[data-travel]'); if (trb) { openTravel(trb.dataset.travel); return; }
-  const go = t.closest('[data-goto]'); if (go) { S.cursor = go.dataset.goto; S.view = go.closest('.mini') ? 'week' : 'day'; S.tab = 'agenda'; render(); return; }
+  const go = t.closest('[data-goto]'); if (go) { S.cursor = go.dataset.goto; if (go.closest('.mini') || go.closest('.g-day') || S.view === 'week') S.view = 'week'; else S.view = 'day'; S.tab = 'agenda'; render(); return; }
   const vw = t.closest('[data-view]'); if (vw) { S.view = vw.dataset.view; render(); return; }
   const op = t.closest('[data-open]'); if (op) { openEditor(op.dataset.open); return; }
   const ak = t.closest('[data-ask]'); if (ak) { sendChat(ak.dataset.ask); return; }

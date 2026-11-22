@@ -943,7 +943,9 @@ export function gridHTML(days: string[]) {
           }px">${lab}</div>`;
         })
         .join('');
-      return `<div class="g-col ${work ? '' : 'off'}" data-date="${d}" style="height:${H}px">${off}${trips}${laid
+      return `<div class="g-col ${work ? '' : 'off'}${
+        d === S.cursor ? ' is-selected' : ''
+      }" data-date="${d}" style="height:${H}px">${off}${trips}${laid
         .filter((o: any) => !merged.has(o.key))
         .map((o: any) =>
           evHTML(
