@@ -85,21 +85,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         >
           <div
             className="login-brand-mark"
+            style={{ width: 44, height: 44, borderRadius: 13 }}
           >
             <svg
               className="i"
               viewBox="0 0 24 24"
-              style={{ width: 20, height: 20, stroke: '#ffffff', strokeWidth: 1.8 }}
+              style={{ width: 24, height: 24, stroke: '#ffffff', strokeWidth: 1.8 }}
             >
               <rect x="3" y="4.5" width="18" height="16" rx="3" />
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <div className="login-brand-title">
-            <span className="login-brand-agenda" style={{ color: '#ffffff' }}>
+          <div className="login-brand-title" style={{ gap: '8px' }}>
+            <span className="login-brand-agenda" style={{ color: '#ffffff', fontSize: '26px', fontWeight: 800, letterSpacing: '-0.025em' }}>
               Smart
             </span>
-            <span className="brand-accent-text">
+            <span className="brand-accent-text" style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.025em' }}>
               Vida
             </span>
           </div>

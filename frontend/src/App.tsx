@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Toaster, toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginScreen } from './components/LoginScreen';
+import { AiAssistantModal } from './components/AiAssistantModal';
 import { api, clearStoredAuth, getStoredAuth } from './services/api';
 import { ThemeMode, UserProfile } from './types/agenda';
 import { S } from './engine/agendaCore';
@@ -28,6 +29,8 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
   const qTimerRef = useRef<any>(null);
   const utilityMenuRef = useRef<HTMLDetailsElement>(null);
   const utilityMenuTimerRef = useRef<any>(null);
+  const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isAiMaximized, setIsAiMaximized] = useState(false);
 
   useEffect(() => {
     initAgendaEngine(onSetTheme);
@@ -105,16 +108,18 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
       transition={{ duration: 0.2 }}
     >
       <header className="top">
-        <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div className="mark">
-            <svg className="i" viewBox="0 0 24 24">
+        <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+          <div className="mark" style={{ width: 34, height: 34, borderRadius: 10 }}>
+            <svg className="i" viewBox="0 0 24 24" style={{ width: 20, height: 20 }}>
               <rect x="3" y="4.5" width="18" height="16" rx="3" />
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontWeight: 700, fontSize: '18px', color: '#ffffff' }}>Smart</span>
-            <span className="brand-accent-text" style={{ fontSize: '18px', fontWeight: 700 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+            <span style={{ fontWeight: 800, fontSize: '22px', color: '#ffffff', letterSpacing: '-0.025em' }}>
+              Smart
+            </span>
+            <span className="brand-accent-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.025em' }}>
               Vida
             </span>
           </div>
@@ -197,6 +202,28 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
       <nav className="bottomnav" id="bnav"></nav>
       <div id="pop-root"></div>
       <div id="modal-root"></div>
+
+      {/* Botão Flutuante da IA */}
+      <button
+        type="button"
+        className={`ai-fab-button ${isAiOpen ? 'active' : ''}`}
+        onClick={() => setIsAiOpen((prev) => !prev)}
+        title="Assistente IA Smart Vida"
+        aria-label="Abrir Assistente IA Smart Vida"
+      >
+        <svg className="i ai-fab-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
+          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z" />
+          <path d="M19 3l-.9 2.1a1 1 0 0 1-.6.6L15.4 6.6l2.1.9a1 1 0 0 1 .6.6L19 10.2l.9-2.1a1 1 0 0 1 .6-.6l2.1-.9-2.1-.9a1 1 0 0 1-.6-.6z" />
+        </svg>
+      </button>
+
+      {/* Modal / Janela Flutuante da IA */}
+      <AiAssistantModal
+        isOpen={isAiOpen}
+        onClose={() => setIsAiOpen(false)}
+        isMaximized={isAiMaximized}
+        onToggleMaximize={() => setIsAiMaximized((prev) => !prev)}
+      />
     </motion.div>
   );
 };
