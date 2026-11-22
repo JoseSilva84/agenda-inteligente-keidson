@@ -33,7 +33,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
     {
       id: 'welcome',
       role: 'assistant',
-      text: 'Olá! Sou o **Assistente IA Smart Vida**.\n\nEstou conectado ao seu sistema para ajudar a organizar compromissos, encontrar horários disponíveis, resumir pendências e otimizar sua rotina.\n\nComo posso ajudar você agora?',
+      text: 'Olá! Sou o **Assistente IA da Agenda Inteligente**.\n\nEstou conectado ao seu sistema para ajudar a organizar compromissos, encontrar horários disponíveis, resumir pendências e otimizar sua rotina.\n\nComo posso ajudar você agora?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -72,9 +72,9 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
       let reply = 'Recebi sua mensagem: "' + text + '".\n\nEssa interface de chat já está pronta e preparada para responder com toda a inteligência da sua agenda assim que conectarmos o modelo de IA!';
       
       if (text.toLowerCase().includes('hoje')) {
-        reply = 'Aqui está uma prévia dos seus compromissos de hoje:\n\n• Suas atividades principais estão registradas no calendário da Smart Vida.\n• Posso ajudá-lo a checar horários livres ou criar novos lembretes rapidamente!';
+        reply = 'Aqui está uma prévia dos seus compromissos de hoje:\n\n• Suas atividades principais estão registradas no calendário da Agenda Inteligente.\n• Posso ajudá-lo a checar horários livres ou criar novos lembretes rapidamente!';
       } else if (text.toLowerCase().includes('resumo') || text.toLowerCase().includes('semana')) {
-        reply = 'Resumo semanal Smart Vida:\n\n• Sua semana possui horários e compromissos ativos na visão semanal.\n• Você pode usar o botão "Multi" no mini calendário para comparar dias lado a lado!';
+        reply = 'Resumo semanal da Agenda Inteligente:\n\n• Sua semana possui horários e compromissos ativos na visão semanal.\n• Você pode usar o botão "Multi" no mini calendário para comparar dias lado a lado!';
       } else if (text.toLowerCase().includes('pendências') || text.toLowerCase().includes('pendencias')) {
         reply = 'Você pode revisar todas as pendências pela aba "Pendências" no topo ou pedir para mim reorganizar os horários livres para você.';
       }
@@ -137,7 +137,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
             <div>
               <div className="ai-modal-title">
                 <span>Assistente IA</span>
-                <span className="brand-accent-text" style={{ fontSize: '13px', marginLeft: '4px' }}>Smart Vida</span>
+                <span className="brand-accent-text" style={{ fontSize: '13px', marginLeft: '4px' }}>Agenda Inteligente</span>
               </div>
               <div className="ai-modal-status">
                 <span className="ai-status-dot"></span>

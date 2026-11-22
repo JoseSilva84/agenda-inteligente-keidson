@@ -117,10 +117,10 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
             <span style={{ fontWeight: 800, fontSize: '22px', color: '#ffffff', letterSpacing: '-0.025em' }}>
-              Smart
+              Agenda
             </span>
             <span className="brand-accent-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.025em' }}>
-              Vida
+              Inteligente
             </span>
           </div>
         </div>
