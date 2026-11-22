@@ -444,7 +444,8 @@ svg.i {
 .utility-panel button {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
   width: 100%;
   min-height: 38px;
   padding: 8px 10px;
@@ -453,6 +454,18 @@ svg.i {
   background: transparent;
   color: var(--ink);
   text-align: left;
+}
+.utility-panel .utility-item-icon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  color: var(--muted);
+}
+.utility-panel button:hover .utility-item-icon,
+.utility-panel button:focus-visible .utility-item-icon { color: var(--accent); }
+.utility-panel button .badge {
+  position: static;
+  margin-left: auto;
 }
 .utility-panel button:hover,
 .utility-panel button:focus-visible { background: var(--soft); }

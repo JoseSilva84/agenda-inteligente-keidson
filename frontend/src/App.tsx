@@ -121,13 +121,31 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
             </summary>
             <div className="utility-panel" aria-label="Opções da agenda">
               <button type="button" onClick={() => { onToggleTheme(); closeUtilityMenu(); }}>
-                {effectiveDark ? 'Usar modo claro' : 'Usar modo escuro'}
+                <svg className="i utility-item-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  {effectiveDark ? (
+                    <>
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+                    </>
+                  ) : (
+                    <path d="M20.3 15.4A8.5 8.5 0 0 1 8.6 3.7 8.5 8.5 0 1 0 20.3 15.4Z" />
+                  )}
+                </svg>
+                <span>{effectiveDark ? 'Modo claro' : 'Modo dark'}</span>
               </button>
               <button type="button" id="bell" onClick={closeUtilityMenu}>
-                Notificações <span className="badge" id="bellcount"></span>
+                <svg className="i utility-item-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+                </svg>
+                <span>Notificação</span>
+                <span className="badge" id="bellcount"></span>
               </button>
               <button type="button" onClick={() => { closeUtilityMenu(); onLogout(); }}>
-                Bloquear agenda
+                <svg className="i utility-item-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="10" width="14" height="10" rx="2" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+                <span>Bloquear agenda</span>
               </button>
             </div>
           </details>
