@@ -453,6 +453,8 @@ export function updateHeader() {
   const unread = S.notifs.filter((n: any) => !n.read).length;
   const bc = $('#bellcount');
   if (bc) bc.textContent = unread ? String(unread) : '';
+  const utilityCount = $('#utility-count');
+  if (utilityCount) utilityCount.textContent = unread ? String(unread) : '';
 }
 
 export function renderBanner() {

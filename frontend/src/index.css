@@ -425,6 +425,37 @@ svg.i {
   top: -6px;
   right: -6px;
 }
+.utility-menu { position: relative; flex: none; }
+.utility-trigger { list-style: none; user-select: none; }
+.utility-trigger::-webkit-details-marker { display: none; }
+.utility-trigger .badge { position: absolute; top: -6px; right: -6px; }
+.utility-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 45;
+  width: 190px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.utility-panel button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+.utility-panel button:hover,
+.utility-panel button:focus-visible { background: var(--soft); }
 .btn {
   border: 1px solid var(--line);
   background: var(--surface);
@@ -2490,6 +2521,12 @@ svg.i {
 #app .brand .brand-pro-badge {
   font-size: 9.5px !important;
   letter-spacing: .08em;
+}
+#app .tabs .tab,
+#app .tabs .tab span,
+#app .mini-h,
+#app .cats label {
+  font-weight: 300 !important;
 }
 
 /* Efeitos em Loop - Borda do Pastor e Botão Entrar */

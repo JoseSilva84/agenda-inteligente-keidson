@@ -26,11 +26,26 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
   onSetTheme
 }) => {
   const qTimerRef = useRef<any>(null);
+  const utilityMenuRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     initAgendaEngine(onSetTheme);
     render();
   }, [onSetTheme]);
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (utilityMenuRef.current && !utilityMenuRef.current.contains(event.target as Node)) {
+        utilityMenuRef.current.open = false;
+      }
+    };
+    document.addEventListener('click', closeOnOutsideClick);
+    return () => document.removeEventListener('click', closeOnOutsideClick);
+  }, []);
+
+  const closeUtilityMenu = () => {
+    if (utilityMenuRef.current) utilityMenuRef.current.open = false;
+  };
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -88,45 +103,34 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
             />
           </label>
 
-          <button
-            type="button"
-            className="iconbtn"
-            onClick={onToggleTheme}
-            title={effectiveDark ? 'Mudar para modo claro (Light)' : 'Mudar para modo escuro (Dark)'}
-            aria-label="Alternar modo claro e escuro"
+          <details
+            className="utility-menu"
+            ref={utilityMenuRef}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                closeUtilityMenu();
+                utilityMenuRef.current?.querySelector('summary')?.focus();
+              }
+            }}
           >
-            {effectiveDark ? (
-              <svg className="i" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            <summary className="iconbtn utility-trigger" aria-label="Mais opções: tema, notificações e bloquear agenda" title="Mais opções">
+              <svg className="i" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" />
               </svg>
-            ) : (
-              <svg className="i" viewBox="0 0 24 24">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
-          </button>
-
-          <button className="iconbtn" id="bell" aria-label="Notificações" title="Notificações">
-            <svg className="i" viewBox="0 0 24 24">
-              <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z" />
-              <path d="M10 20.5a2.2 2.2 0 0 0 4 0" />
-            </svg>
-            <span className="badge" id="bellcount"></span>
-          </button>
-
-          <button
-            type="button"
-            className="iconbtn"
-            onClick={onLogout}
-            title={`Bloquear agenda (${user.name})`}
-            aria-label="Bloquear agenda e sair"
-          >
-            <svg className="i" viewBox="0 0 24 24">
-              <rect x="5" y="11" width="14" height="10" rx="2" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-            </svg>
-          </button>
+              <span className="badge" id="utility-count"></span>
+            </summary>
+            <div className="utility-panel" aria-label="Opções da agenda">
+              <button type="button" onClick={() => { onToggleTheme(); closeUtilityMenu(); }}>
+                {effectiveDark ? 'Usar modo claro' : 'Usar modo escuro'}
+              </button>
+              <button type="button" id="bell" onClick={closeUtilityMenu}>
+                Notificações <span className="badge" id="bellcount"></span>
+              </button>
+              <button type="button" onClick={() => { closeUtilityMenu(); onLogout(); }}>
+                Bloquear agenda
+              </button>
+            </div>
+          </details>
 
           <button className="btn btn-primary" data-act="new">
             <svg className="i" viewBox="0 0 24 24">
