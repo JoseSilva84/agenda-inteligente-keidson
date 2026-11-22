@@ -97,7 +97,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </svg>
           </div>
           <div className="login-brand-title" style={{ gap: '8px' }}>
-            <span className="login-brand-agenda" style={{ color: '#ffffff', fontSize: '26px', fontWeight: 800, letterSpacing: '-0.025em' }}>
+            <span
+              className="login-brand-agenda"
+              style={{
+                color: effectiveDark ? '#ffffff' : '#0f172a',
+                fontSize: '26px',
+                fontWeight: 800,
+                letterSpacing: '-0.025em'
+              }}
+            >
               Smart
             </span>
             <span className="brand-accent-text" style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.025em' }}>

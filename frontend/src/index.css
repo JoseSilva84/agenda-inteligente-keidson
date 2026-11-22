@@ -152,6 +152,12 @@ body {
   letter-spacing: -0.025em;
   color: var(--ink);
 }
+:root[data-theme="light"] .login-brand-agenda {
+  color: #0f172a !important;
+}
+:root[data-theme="dark"] .login-brand-agenda {
+  color: #ffffff !important;
+}
 .login-theme-slot {
   position: absolute;
   right: 16px;
