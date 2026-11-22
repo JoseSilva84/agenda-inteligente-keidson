@@ -28,6 +28,8 @@ export const S: any = {
   tab: 'agenda',
   view: typeof window !== 'undefined' && window.innerWidth < 720 ? 'day' : 'week',
   cursor: todayY(),
+  customDays: [] as string[],
+  multiSelectMode: false,
   hidden: new Set<string>(),
   q: '',
   listRange: 'next',

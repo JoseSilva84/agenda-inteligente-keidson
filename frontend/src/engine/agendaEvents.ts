@@ -783,8 +783,40 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
     }
     const go = t.closest('[data-goto]') as HTMLElement | null;
     if (go) {
-      S.cursor = go.dataset.goto;
-      if (go.closest('.mini') || go.closest('.g-day') || S.view === 'week') {
+      const targetDate = go.dataset.goto!;
+      const fromMini = !!go.closest('.mini');
+      const isMulti = fromMini && (e.ctrlKey || e.metaKey || e.shiftKey || S.multiSelectMode);
+
+      if (isMulti) {
+        if (!Array.isArray(S.customDays)) S.customDays = [];
+        if (e.shiftKey && S.cursor) {
+          const [d1, d2] = S.cursor <= targetDate ? [S.cursor, targetDate] : [targetDate, S.cursor];
+          const diff = Math.min(dayDiff(d1, d2), 14);
+          const range: string[] = [];
+          for (let i = 0; i <= diff; i++) {
+            range.push(addY(d1, i));
+          }
+          S.customDays = Array.from(new Set([...S.customDays, ...range])).sort();
+        } else {
+          if (S.customDays.includes(targetDate)) {
+            S.customDays = S.customDays.filter((d: string) => d !== targetDate);
+          } else {
+            S.customDays = [...S.customDays, targetDate].sort();
+          }
+        }
+        if (S.customDays.length === 0) {
+          S.customDays = [targetDate];
+        }
+        S.cursor = targetDate;
+        S.view = S.customDays.length > 1 ? 'custom' : 'week';
+        S.tab = 'agenda';
+        render();
+        return;
+      }
+
+      S.customDays = [];
+      S.cursor = targetDate;
+      if (fromMini || go.closest('.g-day') || S.view === 'week') {
         S.view = 'week';
       } else {
         S.view = 'day';
@@ -795,6 +827,7 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
     }
     const vw = t.closest('[data-view]') as HTMLElement | null;
     if (vw) {
+      S.customDays = [];
       S.view = vw.dataset.view;
       render();
       return;
@@ -819,6 +852,18 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
     const a = t.closest('[data-act]') as HTMLElement | null;
     if (a) {
       const act = a.dataset.act;
+      if (act === 'toggle-multi') {
+        S.multiSelectMode = !S.multiSelectMode;
+        if (!S.multiSelectMode) {
+          S.customDays = [];
+          S.view = 'week';
+        } else if (!S.customDays || S.customDays.length === 0) {
+          S.customDays = [S.cursor];
+          S.view = 'custom';
+        }
+        render();
+        return;
+      }
       if (act === 'set-theme' && onSetTheme) {
         onSetTheme((a.dataset.val as 'dark' | 'light') || 'dark');
         setTimeout(() => render(), 20);

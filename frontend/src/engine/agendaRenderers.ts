@@ -628,6 +628,7 @@ export function setTab(t: string) {
 
 /* ---------- agenda ---------- */
 export function agendaHTML() {
+  const isCustom = S.view === 'custom' && Array.isArray(S.customDays) && S.customDays.length > 0;
   const body =
     S.view === 'month'
       ? monthHTML()
@@ -636,7 +637,9 @@ export function agendaHTML() {
       : S.view === 'list'
       ? listHTML()
       : gridHTML(
-          S.view === 'day'
+          isCustom
+            ? S.customDays
+            : S.view === 'day'
             ? [S.cursor]
             : Array.from({ length: 7 }, (_, i) => addY(weekStart(S.cursor), i))
         );
@@ -644,6 +647,12 @@ export function agendaHTML() {
 }
 
 export function rangeLabel() {
+  if (S.view === 'custom' && Array.isArray(S.customDays) && S.customDays.length > 0) {
+    const sorted = [...S.customDays].sort();
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    return `PLANNER - ${sorted.length} DIAS SELECIONADOS - ${fmtD(first)} A ${fmtD(last)}`;
+  }
   const c = parse(S.cursor);
   const Y = c.getFullYear();
   if (S.view === 'day')
@@ -676,7 +685,7 @@ export function toolbarHTML() {
       : `<button class="btn btn-sm" data-act="today">Hoje</button><button class="iconbtn" data-act="prev" aria-label="Anterior">${ic(
           'left'
         )}</button><button class="iconbtn" data-act="next" aria-label="Próximo">${ic('right')}</button>`;
-  const grid = S.view === 'day' || S.view === 'week';
+  const grid = S.view === 'day' || S.view === 'week' || S.view === 'custom';
   const hint =
     S.clip && grid
       ? `<span class="clipchip" role="status">Copiado: <b>${esc(S.clip.title)}</b><span class="muted num">${
@@ -691,7 +700,11 @@ export function toolbarHTML() {
     S.sideHidden ? 'Mostrar calendário' : 'Ocultar calendário'
   }" title="${
     S.sideHidden ? 'Mostrar calendário' : 'Ocultar calendário'
-  }"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16"/></svg></button>${nav}<h2>${rangeLabel()}</h2><div class="tb-r">${hint}<div class="seg" role="group" aria-label="Visualização">${v(
+  }"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16"/></svg></button>${nav}<h2>${rangeLabel()}</h2><div class="tb-r">${hint}<div class="seg" role="group" aria-label="Visualização">${
+    S.view === 'custom'
+      ? `<button class="active" data-view="week" title="Voltar para a semana">${S.customDays?.length || 0} dias ✕</button>`
+      : ''
+  }${v(
     'day',
     'Dia'
   )}${v('week', 'Semana')}${v('month', 'Mês')}${v('year', 'Ano')}${v('list', 'Lista')}</div></div></div>`;
@@ -715,11 +728,12 @@ export function sideHTML() {
       .filter((o) => o.status !== 'reagendada')
       .map((o) => o.date)
   );
+  const customSet = new Set(S.view === 'custom' && Array.isArray(S.customDays) ? S.customDays : []);
   const mini = days
     .map(
       (d) =>
         `<button data-goto="${d}" class="${parse(d).getMonth() !== c.getMonth() ? 'out ' : ''}${d === t ? 'today ' : ''}${
-          d === S.cursor ? 'sel ' : ''
+          (customSet.size > 0 ? customSet.has(d) : d === S.cursor) ? 'sel ' : ''
         }${has.has(d) ? 'has' : ''}" aria-label="${fmtDL(d)}">${parse(d).getDate()}</button>`
     )
     .join('');
@@ -754,7 +768,9 @@ export function sideHTML() {
       : 'Carregando…';
   return `<div><div class="mini-h"><button data-act="mprev" aria-label="Mês anterior">${ic('left', 16)}</button><span>${
     MONTHS[c.getMonth()]
-  } ${c.getFullYear()}</span><button data-act="mnext" aria-label="Próximo mês">${ic('right', 16)}</button></div>
+  } ${c.getFullYear()}</span><button class="mini-multi-btn ${S.multiSelectMode ? 'active' : ''}" data-act="toggle-multi" title="Multiseleção de dias (ou segure Ctrl/Cmd ao clicar)">${
+    S.multiSelectMode ? '✓ Multi' : 'Multi'
+  }</button><button data-act="mnext" aria-label="Próximo mês">${ic('right', 16)}</button></div>
     <div class="mini">${WD.map((w) => `<span>${w[0]}</span>`).join('')}${mini}</div></div>
     <div><h3>Hoje</h3><div class="todaylist">${peopleChips(t, 'ad-chip')}${tl}</div></div>
     <div class="pendcard"><b class="num">${pc}</b> <span class="muted">${plural(

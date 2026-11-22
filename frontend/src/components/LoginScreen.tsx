@@ -96,14 +96,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </svg>
           </div>
           <div className="login-brand-title">
-            <span className="login-brand-agenda">
-              Agenda
+            <span className="login-brand-agenda" style={{ color: '#ffffff' }}>
+              Smart
             </span>
             <span className="brand-accent-text">
-              Inteligente
-            </span>
-            <span className="brand-pro-badge">
-              PRO
+              Vida
             </span>
           </div>
         </div>
