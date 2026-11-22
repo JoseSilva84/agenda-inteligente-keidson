@@ -2474,6 +2474,24 @@ svg.i {
   background: #FFFFFF;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
+
+/* O HTML de referência aplica peso 300 a toda a agenda no fim do CSS. */
+#app,
+#app *,
+#app *::before,
+#app *::after {
+  font-weight: 300 !important;
+}
+#app .brand span {
+  font-weight: 700 !important;
+  font-size: 14.4px !important;
+  letter-spacing: .02em;
+}
+#app .brand .brand-pro-badge {
+  font-size: 9.5px !important;
+  letter-spacing: .08em;
+}
+
 /* Efeitos em Loop - Borda do Pastor e Botão Entrar */
 @keyframes auraSpin {
   0% { transform: rotate(0deg); }
