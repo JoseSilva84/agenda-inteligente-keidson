@@ -15,7 +15,10 @@ const PORT = Number(process.env.PORT || 3333);
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: (_origin, callback) => {
+      // Permite requisições de smartvida.app.br, devjosesilva.tech, localhost e afins
+      callback(null, true);
+    },
     credentials: true
   })
 );

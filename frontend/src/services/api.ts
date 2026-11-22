@@ -4,8 +4,19 @@ import { UserProfile } from '../types/agenda';
 const TOKEN_KEY = 'agenda-inteligente-jwt';
 const USER_KEY = 'agenda-inteligente-user';
 
+const getBaseApiUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Em produção (ex: smartvida.app.br), conecta ao backend prkeidson.devjosesilva.tech automaticamente
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://prkeidson.devjosesilva.tech/api';
+  }
+  return '/api';
+};
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: getBaseApiUrl(),
   timeout: 12000,
   headers: {
     'Content-Type': 'application/json'
