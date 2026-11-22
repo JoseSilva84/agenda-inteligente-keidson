@@ -739,9 +739,7 @@ export function sideHTML() {
           (o) =>
             `<button class="trow" data-open="${esc(o.key)}" ${tooltipAttr(o)}><span class="dot" style="--c:${safeColor(
               cat(o.item.category).color
-            )}"></span><span><b>${esc(occTitle(o))}</b><small class="num">${fmtH(o.start)}–${fmtH(o.end)} · ${
-              STATUS[effStatus(o)]
-            }</small></span></button>`
+            )}"></span><span><b>${esc(occTitle(o))}</b><small class="num">${fmtH(o.start)}–${fmtH(o.end)}</small></span></button>`
         )
         .join('')
     : '<p class="muted small" style="margin:0">Nada marcado para hoje.</p>';
@@ -840,9 +838,7 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
       <div class="ev-top"><div class="ev-t">${
         conflict ? '<span class="warnmark" title="Conflito de horário">!</span>' : ''
       }<span class="subn">${o.subNo}/${o.n}</span>${esc(o.sub.text)}</div></div>
-      <div class="ev-m">${esc(o.item.title)}${
-      es === 'pendente' ? ' · pendente' : ''
-    }</div><span class="rz" aria-hidden="true"></span></div>`;
+      <div class="ev-m">${esc(o.item.title)}</div><span class="rz" aria-hidden="true"></span></div>`;
   }
   const s = Math.max(toMin(o.start), HOUR_START * 60);
   const top = ((s - HOUR_START * 60) / 60) * PPH;
