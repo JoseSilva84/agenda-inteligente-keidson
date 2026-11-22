@@ -62,10 +62,29 @@ import {
   openEditor,
   openPeopleDay,
   openResched,
+  openStudy,
   openTravel,
   seed,
   showModal
 } from './agendaModals';
+
+export function navPeriod(k: number) {
+  if (S.view === 'day') S.cursor = addY(S.cursor, k);
+  else if (S.view === 'week') S.cursor = addY(S.cursor, 7 * k);
+  else if (S.view === 'custom') {
+    if (S.customDays && S.customDays.length) {
+      S.customDays = S.customDays.map((d: string) => addY(d, 7 * k));
+    }
+    S.cursor = addY(S.cursor, 7 * k);
+  } else if (S.view === 'year') {
+    const c = parse(S.cursor);
+    S.cursor = ymd(new Date(c.getFullYear() + k, 0, 1));
+  } else {
+    const c = parse(S.cursor);
+    S.cursor = ymd(new Date(c.getFullYear(), c.getMonth() + k, 1));
+  }
+  render();
+}
 
 let drag: any = null;
 let sel: any = null;
@@ -528,6 +547,72 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
 
   document.addEventListener('pointerdown', () => initAudio(), { passive: true });
 
+  // Navegação entre períodos/semanas ao deslizar horizontalmente no trackpad (2 ou 3 dedos) ou swipe touch
+  let trackpadDeltaX = 0;
+  let trackpadTimer: any = null;
+  let trackpadCooldown = false;
+
+  document.addEventListener(
+    'wheel',
+    (e: WheelEvent) => {
+      if ($('.overlay') || S.dragging || S.pasteMode) return;
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest('input, textarea, select, .mini, .pick, .utility-menu, .ai-assistant-modal')) return;
+
+      const dx = e.shiftKey ? e.deltaY : e.deltaX;
+      if (Math.abs(dx) > Math.abs(e.deltaY) * 0.7 && Math.abs(dx) > 12) {
+        if (trackpadCooldown) return;
+        trackpadDeltaX += dx;
+
+        clearTimeout(trackpadTimer);
+        trackpadTimer = setTimeout(() => {
+          trackpadDeltaX = 0;
+        }, 180);
+
+        if (Math.abs(trackpadDeltaX) >= 50) {
+          const dir = trackpadDeltaX > 0 ? 1 : -1;
+          trackpadDeltaX = 0;
+          trackpadCooldown = true;
+          setTimeout(() => {
+            trackpadCooldown = false;
+          }, 380);
+
+          navPeriod(dir);
+        }
+      }
+    },
+    { passive: true }
+  );
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener(
+    'touchstart',
+    (e: TouchEvent) => {
+      if ($('.overlay') || S.dragging) return;
+      if (e.touches.length >= 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    'touchend',
+    (e: TouchEvent) => {
+      if ($('.overlay') || S.dragging) return;
+      if (e.changedTouches.length >= 1) {
+        const diffX = e.changedTouches[0].clientX - touchStartX;
+        const diffY = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(diffX) > Math.abs(diffY) * 1.2 && Math.abs(diffX) > 60) {
+          navPeriod(diffX < 0 ? 1 : -1);
+        }
+      }
+    },
+    { passive: true }
+  );
+
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || e.ctrlKey) return;
     const t = e.target as HTMLElement;
@@ -879,17 +964,7 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
         return;
       }
       if (act === 'prev' || act === 'next') {
-        const k = act === 'prev' ? -1 : 1;
-        if (S.view === 'day') S.cursor = addY(S.cursor, k);
-        else if (S.view === 'week') S.cursor = addY(S.cursor, 7 * k);
-        else if (S.view === 'year') {
-          const c = parse(S.cursor);
-          S.cursor = ymd(new Date(c.getFullYear() + k, 0, 1));
-        } else {
-          const c = parse(S.cursor);
-          S.cursor = ymd(new Date(c.getFullYear(), c.getMonth() + k, 1));
-        }
-        render();
+        navPeriod(act === 'prev' ? -1 : 1);
         return;
       }
       if (act === 'mprev' || act === 'mnext') {

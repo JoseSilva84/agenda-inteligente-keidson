@@ -200,7 +200,7 @@ export function openTravel(id?: string | null, preset: any = {}) {
     <div class="m-b">
       ${
         !tr
-          ? `<div class="seg kind-seg" role="group"><button type="button" data-act="to-activity" aria-pressed="false">Atividade</button><button type="button" aria-pressed="true">Viagem</button></div>`
+          ? `<div class="seg kind-seg" role="group"><button type="button" data-act="to-activity" aria-pressed="false">Atividade</button><button type="button" data-act="to-study" aria-pressed="false">Estudos</button><button type="button" aria-pressed="true">Viagem</button></div>`
           : ''
       }
       <p class="note" style="margin:0">O período fica sombreado na agenda, do momento da saída até a volta. Você continua podendo marcar atividades por cima.</p>
@@ -232,6 +232,16 @@ export function openTravel(id?: string | null, preset: any = {}) {
           };
           closeModal(w);
           openEditor(null, p);
+        }
+        if (b.dataset.act === 'to-study') {
+          const p = {
+            date: ($('#tr-d1', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#tr-t1', w) as HTMLInputElement)?.value || '09:00',
+            title: ($('#tr-title', w) as HTMLInputElement)?.value,
+            notes: ($('#tr-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openStudy(null, p);
         }
         if (b.dataset.act === 'tr-del') {
           const ok = await ask('Apagar viagem', `Apagar a viagem “${v.title || 'Viagem'}” e tirar o sombreamento?`, [
@@ -276,6 +286,299 @@ export function openTravel(id?: string | null, preset: any = {}) {
         closeModal(w);
         render();
         toast(`Período sombreado: ${travelText(v)}.`);
+      });
+    }
+  );
+}
+
+export function openStudy(id?: string | null, preset: any = {}) {
+  if (S.readOnly) {
+    toast('Esta agenda está disponível só para leitura.');
+    return;
+  }
+  const v = {
+    title: preset.title || '',
+    date: preset.date || todayY(),
+    start: preset.start || '09:00',
+    end: preset.end || fromMin(Math.min(1439, toMin(preset.start || '09:00') + 60)),
+    notes: preset.notes || '',
+    revTime: preset.start || '09:00',
+    revDur: 30
+  };
+
+  const intervals = [
+    { step: 1, days: 1, label: '1ª Revisão', desc: 'Amanhã (+1 dia)', active: true },
+    { step: 2, days: 3, label: '2ª Revisão', desc: 'Daqui a 3 dias (+3 dias)', active: true },
+    { step: 3, days: 7, label: '3ª Revisão', desc: 'Daqui a 7 dias (+7 dias)', active: true },
+    { step: 4, days: 14, label: '4ª Revisão', desc: 'Daqui a 14 dias (+14 dias)', active: true },
+    { step: 5, days: 30, label: '5ª Revisão', desc: 'Daqui a 30 dias (+30 dias)', active: true }
+  ];
+
+  const renderRevRows = () => {
+    return intervals
+      .map((it, idx) => {
+        const targetDate = addY(v.date, it.days);
+        const targetFormatted = fmtDW(targetDate);
+        return `<div class="st-rev-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:${
+          it.active ? 'var(--surface)' : 'transparent'
+        };opacity:${it.active ? '1' : '0.55'};transition:all 0.15s">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;user-select:none">
+            <input type="checkbox" class="st-rev-check" data-idx="${idx}" ${it.active ? 'checked' : ''} style="accent-color:#8B5CF6;width:16px;height:16px">
+            <div>
+              <span style="font-weight:700;font-size:13.5px;color:var(--ink)">${it.label}</span>
+              <span class="muted small" style="margin-left:6px">${it.desc}</span>
+            </div>
+          </label>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12.5px;font-weight:600;color:#8B5CF6">${targetFormatted}</span>
+          </div>
+        </div>`;
+      })
+      .join('');
+  };
+
+  showModal(
+    `<form id="studyform" novalidate>
+      <div class="m-h">
+        <span class="dot" style="--c:#8B5CF6;width:14px;height:14px"></span>
+        <input class="title" id="st-title" placeholder="Tema ou assunto do estudo (ex: As 70 Semanas, Anatomia…)" value="${esc(
+          v.title
+        )}" autofocus aria-label="Tema do estudo">
+      </div>
+      <div class="m-b">
+        <div class="seg kind-seg" role="group">
+          <button type="button" data-act="to-activity" aria-pressed="false">Atividade</button>
+          <button type="button" aria-pressed="true">Estudos</button>
+          <button type="button" data-act="to-travel" aria-pressed="false">Viagem</button>
+        </div>
+        <p class="note" style="margin:0">Cadastre a sessão de estudos. A agenda calculará e agendará automaticamente todas as <b>sessões de revisão espaçada</b> para fixação definitiva na memória.</p>
+        
+        <div class="row3">
+          <label class="field" for="st-date">Data do estudo<input type="date" id="st-date" value="${v.date}" required></label>
+          <label class="field" for="st-start">Início<input type="time" id="st-start" value="${v.start}" step="300"></label>
+          <label class="field" for="st-end">Fim<input type="time" id="st-end" value="${v.end}" step="300"></label>
+          <label class="field" for="st-dur">Duração<select id="st-dur">${durOptions(toMin(v.end) - toMin(v.start))}</select></label>
+        </div>
+
+        <div class="spaced-rep-box" style="margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">🧠</span>
+              <span style="font-weight:700;font-size:14px;color:var(--ink)">Revisões Espaçadas Automáticas</span>
+            </div>
+            <span class="muted small" style="font-weight:600">Curva de Fixação</span>
+          </div>
+          <p class="note" style="margin:0 0 10px 0;font-size:12px">Marque as revisões programadas. As datas são calculadas automaticamente a partir do dia estudado:</p>
+          
+          <div class="spaced-rep-list" id="st-rev-list" style="display:grid;gap:6px;">
+            ${renderRevRows()}
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);flex-wrap:wrap;">
+            <label class="field" for="st-rev-time" style="margin:0;flex:1 1 170px">Horário das revisões
+              <input type="time" id="st-rev-time" value="${v.revTime}" step="300">
+            </label>
+            <label class="field" for="st-rev-dur" style="margin:0;flex:1 1 170px">Duração de cada revisão
+              <select id="st-rev-dur">
+                <option value="15">15 minutos (Rápida)</option>
+                <option value="30" selected>30 minutos (Padrão)</option>
+                <option value="45">45 minutos</option>
+                <option value="60">1 hora (Completa)</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <label class="field" for="st-notes" style="margin-top:12px">Anotações do estudo / Resumo<textarea id="st-notes" rows="3" placeholder="Resumo do conteúdo, tópicos das 70 semanas, versículos, referências ou páginas para rever…">${esc(
+          v.notes || ''
+        )}</textarea></label>
+        <div class="err-msg" id="st-err" role="alert"></div>
+      </div>
+      <div class="m-f">
+        <span class="sp"></span>
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#7C3AED;border-color:#6D28D9;color:#fff">Agendar Estudo e Revisões</button>
+      </div>
+    </form>`,
+    (w) => {
+      const updateRevList = () => {
+        const box = $('#st-rev-list', w);
+        if (box) box.innerHTML = renderRevRows();
+      };
+
+      const syncDur = () => {
+        const sel = $('#st-dur', w);
+        if (sel) sel.innerHTML = durOptions(toMin(v.end) - toMin(v.start));
+      };
+
+      w.addEventListener('input', (e: Event) => {
+        const t = e.target as HTMLInputElement;
+        if (t.id === 'st-title') v.title = t.value;
+        else if (t.id === 'st-date') {
+          v.date = t.value;
+          updateRevList();
+        } else if (t.id === 'st-start') {
+          const dur = toMin(v.end) - toMin(v.start);
+          v.start = t.value;
+          if (dur > 0 && t.value) {
+            v.end = fromMin(Math.min(1439, toMin(t.value) + dur));
+            const endEl = $('#st-end', w) as HTMLInputElement | null;
+            if (endEl) endEl.value = v.end;
+          }
+          syncDur();
+        } else if (t.id === 'st-end') {
+          v.end = t.value;
+          syncDur();
+        } else if (t.id === 'st-notes') {
+          v.notes = t.value;
+        } else if (t.id === 'st-rev-time') {
+          v.revTime = t.value;
+        }
+      });
+
+      w.addEventListener('change', (e: Event) => {
+        const t = e.target as HTMLInputElement;
+        if (t.id === 'st-dur') {
+          if (t.value) {
+            v.end = fromMin(Math.min(1439, toMin(v.start) + +t.value));
+            const endEl = $('#st-end', w) as HTMLInputElement | null;
+            if (endEl) endEl.value = v.end;
+            syncDur();
+          }
+        } else if (t.id === 'st-rev-dur') {
+          v.revDur = +t.value || 30;
+        } else if (t.classList.contains('st-rev-check')) {
+          const idx = +t.dataset.idx!;
+          if (intervals[idx]) {
+            intervals[idx].active = t.checked;
+            updateRevList();
+          }
+        }
+      });
+
+      w.addEventListener('click', (e: MouseEvent) => {
+        const b = (e.target as HTMLElement).closest('button');
+        if (!b) return;
+        if (b.dataset.act === 'to-activity') {
+          const p = {
+            date: ($('#st-date', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#st-start', w) as HTMLInputElement)?.value || v.start,
+            end: ($('#st-end', w) as HTMLInputElement)?.value || v.end,
+            title: ($('#st-title', w) as HTMLInputElement)?.value,
+            notes: ($('#st-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openEditor(null, p);
+        } else if (b.dataset.act === 'to-travel') {
+          const p = {
+            date: ($('#st-date', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#st-start', w) as HTMLInputElement)?.value || v.start,
+            title: ($('#st-title', w) as HTMLInputElement)?.value,
+            notes: ($('#st-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openTravel(null, p);
+        }
+      });
+
+      $('#studyform', w).addEventListener('submit', (e: Event) => {
+        e.preventDefault();
+        const err = $('#st-err', w);
+        const title = ($('#st-title', w) as HTMLInputElement).value.trim();
+        const date = validY(($('#st-date', w) as HTMLInputElement).value);
+        const start = validT(($('#st-start', w) as HTMLInputElement).value);
+        const end = validT(($('#st-end', w) as HTMLInputElement).value);
+        const notes = ($('#st-notes', w) as HTMLTextAreaElement).value.trim();
+
+        if (!title) {
+          err.textContent = 'Informe o tema ou assunto do estudo (ex: As 70 Semanas).';
+          $('#st-title', w).focus();
+          return;
+        }
+        if (!date || !start || !end) {
+          err.textContent = 'Preencha a data e os horários do estudo.';
+          return;
+        }
+        if (toMin(end) <= toMin(start)) {
+          err.textContent = 'O horário de fim precisa ser posterior ao de início.';
+          return;
+        }
+
+        const activeRev = intervals.filter((x) => x.active);
+        const mainId = 's_' + uid();
+        const cleanTitle = title.toLowerCase().startsWith('estudo') ? title : `Estudo: ${title}`;
+
+        // Atividade Principal do Estudo
+        const mainItem = {
+          id: mainId,
+          kind: 'activity',
+          title: cleanTitle,
+          date,
+          start,
+          end,
+          category: 'estudos',
+          priority: 'alta',
+          status: 'planejada',
+          notes: [
+            notes,
+            '',
+            '🧠 Sessão de Estudo com Revisão Espaçada:',
+            ...activeRev.map((r) => `• ${r.label} (${r.desc}): ${fmtDW(addY(date, r.days))}`)
+          ]
+            .filter(Boolean)
+            .join('\n'),
+          recur: { freq: 'none' },
+          reminder: 15,
+          fixed: false,
+          autoResched: true,
+          subtasks: [],
+          links: [],
+          files: [],
+          history: [{ at: Date.now(), text: 'Sessão de estudos criada com Revisão Espaçada' }]
+        };
+        putItem(mainItem);
+
+        // Atividades de cada Revisão Espaçada
+        const revTime = validT(($('#st-rev-time', w) as HTMLInputElement).value) || start;
+        const revDur = v.revDur || 30;
+        const revEnd = fromMin(Math.min(1439, toMin(revTime) + revDur));
+
+        activeRev.forEach((rev, i) => {
+          const revDate = addY(date, rev.days);
+          const revId = 's_rev_' + uid();
+          const revItem = {
+            id: revId,
+            kind: 'activity',
+            title: `Revisão ${i + 1}/${activeRev.length}: ${title}`,
+            date: revDate,
+            start: revTime,
+            end: revEnd,
+            category: 'estudos',
+            priority: 'media',
+            status: 'planejada',
+            notes: [
+              `🧠 Revisão Espaçada (${rev.label} · ${rev.desc})`,
+              `Assunto original: ${cleanTitle}`,
+              `Estudado em: ${fmtDL(date)}`,
+              notes ? `\nAnotações do estudo original:\n${notes}` : ''
+            ]
+              .filter(Boolean)
+              .join('\n'),
+            recur: { freq: 'none' },
+            reminder: 15,
+            fixed: false,
+            autoResched: true,
+            subtasks: [],
+            links: [],
+            files: [],
+            history: [{ at: Date.now(), text: `Revisão agendada (${rev.desc}) para fixação na memória` }]
+          };
+          putItem(revItem);
+        });
+
+        closeModal(w);
+        render();
+        toast(`Estudo "${title}" e ${activeRev.length} revisões agendadas com sucesso!`);
       });
     }
   );
@@ -399,7 +702,7 @@ function editorInner(ed: any) {
   <div class="m-b">
     ${
       isNew
-        ? `<div class="seg kind-seg" role="group"><button type="button" aria-pressed="true">Atividade</button><button type="button" data-act="to-travel" aria-pressed="false">Viagem</button></div>`
+        ? `<div class="seg kind-seg" role="group"><button type="button" aria-pressed="true">Atividade</button><button type="button" data-act="to-study" aria-pressed="false">Estudos</button><button type="button" data-act="to-travel" aria-pressed="false">Viagem</button></div>`
         : ''
     }
     ${
@@ -903,6 +1206,16 @@ function bindEditor(w: HTMLElement, ed: any) {
     else if (b.dataset.rmSub !== undefined) {
       d.subtasks.splice(+b.dataset.rmSub, 1);
       refreshSubs();
+    } else if (b.dataset.act === 'to-study') {
+      const p = {
+        date: d.date,
+        start: d.start,
+        end: d.end,
+        title: d.title,
+        notes: d.notes
+      };
+      closeModal(w);
+      openStudy(null, p);
     } else if (b.dataset.act === 'to-travel') {
       const p = { date: d.date, start: d.start, title: d.title };
       closeModal(w);

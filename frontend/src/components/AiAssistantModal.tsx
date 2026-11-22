@@ -16,11 +16,11 @@ interface AiAssistantModalProps {
 }
 
 const DEFAULT_SUGGESTIONS = [
+  'Como passar para a próxima semana pelo trackpad?',
+  'Como funciona a Revisão Espaçada de estudos?',
   'O que tenho marcado para hoje?',
-  'Quais horários estão livres amanhã?',
   'Faça um resumo dos meus compromissos da semana.',
-  'Como organizar minhas pendências prioritárias?',
-  'Criar uma nova atividade na agenda.'
+  'Como organizar minhas pendências prioritárias?'
 ];
 
 export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
@@ -70,12 +70,17 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
     // Resposta inicial de frontend / mockup enquanto a integração do backend é conectada
     setTimeout(() => {
       let reply = 'Recebi sua mensagem: "' + text + '".\n\nEssa interface de chat já está pronta e preparada para responder com toda a inteligência da sua agenda assim que conectarmos o modelo de IA!';
+      const lower = text.toLowerCase();
       
-      if (text.toLowerCase().includes('hoje')) {
+      if (lower.includes('trackpad') || lower.includes('track pad') || lower.includes('três dedos') || lower.includes('tres dedos') || lower.includes('arrastando') || lower.includes('passar para próxima semana') || lower.includes('proxima semana') || lower.includes('navegar')) {
+        reply = '💡 **Navegação Rápida com Trackpad:**\n\nVocê pode navegar entre as semanas diretamente com o mouse/trackpad do seu computador:\n\n• **Gesto:** Toque e arraste para o lado horizontalmente com os dedos no trackpad do mouse ou notebook sobre o calendário.\n• **Avançar:** Arrastar para a esquerda passa para a **próxima semana**.\n• **Voltar:** Arrastar para a direita retorna para a **semana anterior**.\n• O sistema reconhece o gesto suavemente para você navegar sem precisar clicar nas setas!';
+      } else if (lower.includes('estudo') || lower.includes('estudos') || lower.includes('revisão') || lower.includes('revisao') || lower.includes('espaçada') || lower.includes('espacada') || lower.includes('70 semanas')) {
+        reply = '📚 **Estudos com Revisão Espaçada Inteligente:**\n\nAgora a Agenda possui a aba **Estudos** na criação de atividades para fixação e retenção de conteúdo:\n\n1. Clique em **+ Nova atividade** e escolha a opção **Estudos** no topo da janela.\n2. Defina o assunto estudado (ex: *As 70 Semanas*) e o dia/horário.\n3. O sistema calcula e agenda automaticamente as 5 revisões recomendadas:\n   • **1ª Revisão:** Amanhã (+1 dia)\n   • **2ª Revisão:** Daqui a 3 dias (+3 dias)\n   • **3ª Revisão:** Daqui a 7 dias (+7 dias)\n   • **4ª Revisão:** Daqui a 14 dias (+14 dias)\n   • **5ª Revisão:** Daqui a 30 dias (+30 dias)\n\nTodas as sessões são criadas na categoria **Estudos** e distribuídas diretamente na sua agenda!';
+      } else if (lower.includes('hoje')) {
         reply = 'Aqui está uma prévia dos seus compromissos de hoje:\n\n• Suas atividades principais estão registradas no calendário da Agenda Inteligente.\n• Posso ajudá-lo a checar horários livres ou criar novos lembretes rapidamente!';
-      } else if (text.toLowerCase().includes('resumo') || text.toLowerCase().includes('semana')) {
+      } else if (lower.includes('resumo') || lower.includes('semana')) {
         reply = 'Resumo semanal da Agenda Inteligente:\n\n• Sua semana possui horários e compromissos ativos na visão semanal.\n• Você pode usar o botão "Multi" no mini calendário para comparar dias lado a lado!';
-      } else if (text.toLowerCase().includes('pendências') || text.toLowerCase().includes('pendencias')) {
+      } else if (lower.includes('pendências') || lower.includes('pendencias')) {
         reply = 'Você pode revisar todas as pendências pela aba "Pendências" no topo ou pedir para mim reorganizar os horários livres para você.';
       }
 
