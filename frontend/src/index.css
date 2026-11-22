@@ -17,8 +17,8 @@
   --ok: #0F8458;
   --warn: #A86500;
   --bad: #C3304A;
-  --font-display: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-  --font-body: "Figtree", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
   --r: 10px;
   --shadow: 0 10px 30px rgba(20, 26, 46, .14);
   --apple-blur: saturate(180%) blur(20px);
@@ -292,9 +292,7 @@ svg.i {
   align-items: center;
   gap: 16px;
   padding: 10px 16px;
-  background: var(--surface-glass);
-  backdrop-filter: var(--apple-blur);
-  -webkit-backdrop-filter: var(--apple-blur);
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
   position: relative;
   z-index: 20;
@@ -316,7 +314,6 @@ svg.i {
   display: grid;
   place-items: center;
   color: var(--accent-ink);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .tabs {
   display: flex;
@@ -2320,7 +2317,7 @@ body.pasting .clipchip {
   .login-header { max-width: 900px; }
 }
 
-/* iPhone: the indicated theme icon moves above the Agenda Inteligente Pro name. */
+/* iPhone: keep the theme control beside the brand on one compact row. */
 @media (max-width: 600px) {
   .login-screen {
     padding:
@@ -2330,24 +2327,37 @@ body.pasting .clipchip {
       max(14px, env(safe-area-inset-left));
   }
   .login-header {
-    flex-direction: column;
-    gap: 9px;
+    justify-content: space-between;
+    gap: 6px;
     padding: 8px 0 6px;
   }
   .login-theme-slot {
     position: static;
-    order: -1;
+    flex: none;
+    margin-left: auto;
     transform: none;
   }
-  .login-brand { gap: 9px; }
-  .login-brand-title { gap: 5px; }
-  .login-brand-mark {
+  .login-theme-toggle {
     width: 34px;
     height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    border-radius: 10px;
+  }
+  .login-theme-toggle::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+  }
+  .login-brand { gap: 7px; min-width: 0; }
+  .login-brand-title { gap: 4px; white-space: nowrap; }
+  .login-brand-mark {
+    width: 32px;
+    height: 32px;
     border-radius: 10px;
   }
   .login-brand-agenda,
-  .login-brand-title .brand-accent-text { font-size: 16px; }
+  .login-brand-title .brand-accent-text { font-size: clamp(13px, 3.8vw, 16px); }
   .login-brand-title .brand-pro-badge {
     font-size: 8px;
     padding: 2px 5px;
@@ -2378,13 +2388,7 @@ body.pasting .clipchip {
 
 /* Compact iPhones and landscape mode: keep every control reachable without clipping. */
 @media (max-width: 600px) and (max-height: 760px) {
-  .login-header { gap: 6px; padding-top: 4px; }
-  .login-theme-toggle {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-  }
+  .login-header { padding-top: 4px; }
   .login-main { padding: 8px 0; }
   .login-card { padding: 22px 20px; }
   .login-identity { margin-bottom: 16px; }
@@ -2398,18 +2402,14 @@ body.pasting .clipchip {
   .login-footer { padding: 4px; }
 }
 
-.brand span {
-  font-size: 14.4px;
-  letter-spacing: .02em;
-}
 svg.i {
-  stroke-width: 1.5;
+  stroke-width: 1.8;
 }
 
 /* Brand Title Accent Gradient & Fallback */
 .brand-accent-text {
   display: inline-block;
-  font-family: var(--font-display, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif);
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -2432,7 +2432,7 @@ svg.i {
 .brand-pro-badge {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-display, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
+  font-family: var(--font-display);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;

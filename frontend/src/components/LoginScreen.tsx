@@ -77,7 +77,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         }}
       />
 
-      {/* On iPhone the theme control sits above the brand; iPad/MacBook keep a horizontal header. */}
+      {/* Keep the brand and theme control on the same row at every viewport width. */}
       <header className="login-header">
         {/* Centered Brand: Beautiful Glowing Icon + Title with NO background card */}
         <div
@@ -96,9 +96,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </svg>
           </div>
           <div className="login-brand-title">
-            <span
-              className="login-brand-agenda"
-            >
+            <span className="login-brand-agenda">
               Agenda
             </span>
             <span className="brand-accent-text">
@@ -320,12 +318,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </form>
 
           {/* Apple Devices Footer Badge */}
-          <div
-            style={{
-              color: 'var(--muted)'
-            }}
-            className="login-device-note"
-          >
+          <div className="login-device-note" style={{ color: 'var(--muted)' }}>
             <span>MacBook · iPhone · iPad</span>
           </div>
         </motion.div>

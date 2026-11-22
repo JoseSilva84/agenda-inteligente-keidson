@@ -46,6 +46,15 @@ export function resetPastorAvatar() {
 export function normSettings(s: any) {
   const d = DEFAULT_SETTINGS();
   let cats = Array.isArray(s?.categories) && s.categories.length ? s.categories : d.categories;
+  // Contas antigas podem ter só três categorias. Complete o conjunto do modelo
+  // uma vez, mantendo cores e categorias personalizadas já salvas.
+  if (!s?.categoryDefaultsMigrated) {
+    const existing = new Map(cats.map((c: any) => [c.id, c]));
+    cats = [
+      ...d.categories.map((c) => existing.get(c.id) || c),
+      ...cats.filter((c: any) => !d.categories.some((base) => base.id === c.id))
+    ];
+  }
   if (!s?.specialCats) {
     for (const k of d.categories.filter((c) => c.id === 'aniversariantes' || c.id === 'diasprof')) {
       if (!cats.some((c: any) => c.id === k.id)) cats = [...cats, k];
@@ -56,6 +65,7 @@ export function normSettings(s: any) {
     ...s,
     mode: 'confirm',
     specialCats: true,
+    categoryDefaultsMigrated: true,
     kind: 'settings',
     categories: cats,
     workDays: Array.isArray(s?.workDays) ? s.workDays : d.workDays

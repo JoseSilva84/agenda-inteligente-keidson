@@ -673,7 +673,7 @@ export function sideHTML() {
     'pendência',
     'pendências'
   )} para remarcar</span><div style="margin-top:8px"><button class="btn btn-sm" data-tab="pendencias">Revisar pendências</button></div></div>
-    <div><h3>Categorias</h3><div class="cats">${cats}</div></div>
+    <div><h3>Categorias</h3><div class="cats">${cats}</div><button class="btn btn-sm" data-tab="ajustes" style="margin-top:8px">Adicionar categoria</button></div>
     <div class="store-chip">${ic('agenda', 14)} ${store}</div>`;
 }
 
@@ -770,16 +770,7 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
     <div class="ev-top"><div class="ev-t">${
       conflict ? '<span class="warnmark" title="Conflito de horário">!</span>' : ''
     }${esc(o.item.title)}</div>${markIcons(o.item)}</div>
-    ${(() => {
-      const meta = [
-        run ? `${fmtDW(run.first)} a ${fmtDW(run.last)}` : '',
-        o.rec && !run ? 'repete' : '',
-        es === 'pendente' ? 'pendente' : run && run.somePend ? 'dias anteriores pendentes' : ''
-      ]
-        .filter(Boolean)
-        .join(' · ');
-      return meta ? `<div class="ev-m">${meta}</div>` : '';
-    })()}<span class="rz" aria-hidden="true"></span><span class="rzx" aria-hidden="true" title="Arraste para os lados para ocupar outros dias"></span></div>`;
+    <span class="rz" aria-hidden="true"></span><span class="rzx" aria-hidden="true" title="Arraste para os lados para ocupar outros dias"></span></div>`;
 }
 
 const mergeable = (o: any) =>
@@ -888,8 +879,7 @@ export function gridHTML(days: string[]) {
         n,
         first: r.occs[0].date,
         last: r.occs[r.occs.length - 1].date,
-        es: same ? ess[0] : 'planejada',
-        somePend: !same && ess.includes('pendente')
+        es: same ? ess[0] : 'planejada'
       });
     })
     .join('');
@@ -1634,6 +1624,7 @@ export function settingsHTML() {
         .join('')}</div></div>
       <p class="note">A agenda só usa o horário útil para procurar vagas ao remarcar. Você pode marcar atividades em qualquer horário.</p></div>
     <div class="card"><h2 style="margin-bottom:12px">Categorias e cores</h2>
+      <p class="muted" style="margin:0 0 12px">Além das categorias do modelo, você pode adicionar outras e escolher o nome e a cor de cada uma.</p>
       <div id="catlist">${st.categories
         .map(
           (c: any, i: number) =>
