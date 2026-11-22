@@ -1,4 +1,6 @@
 import { api } from '../services/api';
+import tippy, { type Instance } from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
 import {
   HOUR_END,
   HOUR_START,
@@ -56,7 +58,6 @@ import {
   pendingOccs,
   suggestAll,
   travelSegs,
-  travelText,
   visible,
   withSubs
 } from './agendaCore';
@@ -64,6 +65,90 @@ import { browserNotify, chime, toast, getPastorAvatar } from './agendaStorage';
 
 export const $ = (s: string, r: Document | HTMLElement = document) => r.querySelector(s) as any;
 export const $$ = (s: string, r: Document | HTMLElement = document) => [...r.querySelectorAll(s)] as any[];
+
+const tooltipOccurrences = new Map<string, any>();
+let activityTooltips: Instance[] = [];
+
+function tooltipAttr(o: any) {
+  tooltipOccurrences.set(o.key, o);
+  return `data-tooltip-key="${esc(o.key)}"`;
+}
+
+function detailTooltip(titleText: string, details: Array<[string, string]>, notes = '') {
+  const box = document.createElement('div');
+  box.className = 'activity-tooltip';
+  const title = document.createElement('strong');
+  title.className = 'activity-tooltip-title';
+  title.textContent = titleText;
+  box.appendChild(title);
+  for (const [label, value] of details) {
+    const row = document.createElement('div');
+    row.className = 'activity-tooltip-row';
+    const key = document.createElement('span');
+    key.textContent = label;
+    const detail = document.createElement('span');
+    detail.textContent = value;
+    row.append(key, detail);
+    box.appendChild(row);
+  }
+  if (notes) {
+    const note = document.createElement('p');
+    note.className = 'activity-tooltip-note';
+    note.textContent = notes;
+    box.appendChild(note);
+  }
+  return box;
+}
+
+function tooltipContent(o: any) {
+  if (!o) return detailTooltip('Atividade', []);
+  const details: Array<[string, string]> = [
+    ['Data', o.displayRange ? `${fmtDL(o.displayRange[0])} a ${fmtDL(o.displayRange[1])}` : fmtDL(o.date)],
+    ['Horário', `${fmtH(o.start)}–${fmtH(o.end)}`],
+    ['Categoria', cat(o.item.category).name],
+    ['Estado', STATUS[effStatus(o)] || 'Planejada']
+  ];
+  if (o.rec) details.push(['Recorrência', 'Atividade recorrente']);
+  if (o.isSub) details.push(['Atividade', o.item.title]);
+  return detailTooltip(o.isSub ? o.sub.text : occTitle(o), details, String(o.item.notes || '').trim());
+}
+
+function tooltipForReference(reference: Element) {
+  const element = reference as HTMLElement;
+  if (element.dataset.tooltipKey) return tooltipContent(tooltipOccurrences.get(element.dataset.tooltipKey));
+  if (element.dataset.tooltipTravel) {
+    const tr = S.travels.get(element.dataset.tooltipTravel);
+    return tr
+      ? detailTooltip(tr.title || 'Viagem', [
+          ['Saída', `${fmtDL(tr.date)}, ${fmtH(tr.start)}`],
+          ['Retorno', `${fmtDL(tr.endDate)}, ${fmtH(tr.end)}`]
+        ])
+      : detailTooltip('Viagem', []);
+  }
+  const [date, type] = (element.dataset.tooltipPeople || '').split('|');
+  const people = date && type ? peopleOn(date)[type] || [] : [];
+  return detailTooltip(PTYPES[type]?.label || 'Data especial', [
+    ['Data', date ? fmtDL(date) : ''],
+    ['Pessoas', people.map((person: any) => person.name).join(', ')]
+  ]);
+}
+
+function attachActivityTooltips(root: HTMLElement) {
+  const targets = [...root.querySelectorAll<HTMLElement>('[data-tooltip-key], [data-tooltip-travel], [data-tooltip-people]')];
+  activityTooltips = tippy(targets, {
+    content: tooltipForReference,
+    theme: 'agenda',
+    placement: 'top',
+    delay: [180, 60],
+    maxWidth: 300,
+    appendTo: () => document.body,
+    trigger: 'mouseenter focus',
+    touch: false,
+    onShow: () => {
+      if (S.dragging) return false;
+    }
+  });
+}
 
 export const TABS: Array<[string, string, string]> = [
   ['agenda', 'Agenda', 'agenda'],
@@ -201,9 +286,9 @@ export function peopleChips(d: string, cls: string) {
     .filter((k) => on[k].length && !S.hidden.has(PTYPES[k].cat))
     .map(
       (k) =>
-        `<button class="${cls}" data-pday="${d}" data-ptype="${k}" style="--c:${safeColor(
+        `<button class="${cls}" data-pday="${d}" data-ptype="${k}" data-tooltip-people="${d}|${k}" style="--c:${safeColor(
           cat(PTYPES[k].cat).color
-        )}" title="${esc(on[k].map((x) => x.name).join(', '))}">${ic(
+        )}">${ic(
           k === 'aniversario' ? 'cake' : 'note'
         )}<span>${PTYPES[k].label}</span><b>${on[k].length}</b></button>`
     )
@@ -503,6 +588,9 @@ export function render() {
     return;
   }
   S.pendingRender = false;
+  activityTooltips.forEach((tip) => tip.destroy());
+  activityTooltips = [];
+  tooltipOccurrences.clear();
   updateHeader();
   renderBanner();
   document.body.classList.toggle('pasting', !!(S.pasteMode && S.clip));
@@ -522,6 +610,7 @@ export function render() {
       : settingsHTML();
   const sc2 = m.querySelector('.g-scroll');
   if (sc2) sc2.scrollTop = S.scroll ?? (7 - HOUR_START) * PPH;
+  attachActivityTooltips(m);
   if (S.tab === 'assistente') renderChat();
   if (S.popOpen) renderPop();
 }
@@ -648,7 +737,7 @@ export function sideHTML() {
         .slice(0, 6)
         .map(
           (o) =>
-            `<button class="trow" data-open="${esc(o.key)}"><span class="dot" style="--c:${safeColor(
+            `<button class="trow" data-open="${esc(o.key)}" ${tooltipAttr(o)}><span class="dot" style="--c:${safeColor(
               cat(o.item.category).color
             )}"></span><span><b>${esc(occTitle(o))}</b><small class="num">${fmtH(o.start)}–${fmtH(o.end)} · ${
               STATUS[effStatus(o)]
@@ -743,7 +832,7 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
     const es = effStatus(o);
     const c = safeColor(cat(o.item.category).color);
     const short = toMin(o.end) - toMin(o.start) <= 30;
-    return `<div class="ev subev st-${es}${short ? ' short' : ''}" data-key="${esc(
+    return `<div class="ev subev st-${es}${short ? ' short' : ''}" ${tooltipAttr(o)} data-key="${esc(
       o.key
     )}" tabindex="0" role="button" aria-label="Subtarefa ${o.subNo} de ${o.n}: ${esc(o.sub.text)}, de ${esc(
       o.item.title
@@ -764,14 +853,14 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   const es = run ? run.es : effStatus(o);
   const c = safeColor(cat(o.item.category).color);
   const days = run ? `${fmtDW(run.first)} a ${fmtDW(run.last)} · ` : '';
-  return `<div class="ev st-${es}${short ? ' short' : ''}" data-key="${esc(o.key)}"${
+  return `<div class="ev st-${es}${short ? ' short' : ''}" ${tooltipAttr(run ? { ...o, displayRange: [run.first, run.last] } : o)} data-key="${esc(o.key)}"${
     run ? ` data-span="1" data-first="${run.first}" data-last="${run.last}"` : ''
   } tabindex="0" role="button" aria-label="${esc(o.item.title)}, ${days}${fmtH(o.start)} a ${fmtH(o.end)}, ${
     STATUS[es]
   }" style="--c:${c};top:${top}px;height:${h}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px)">
     <div class="ev-top"><div class="ev-t">${
       conflict ? '<span class="warnmark" title="Conflito de horário">!</span>' : ''
-    }${esc(o.item.title)}</div>${markIcons(o.item)}</div>
+    }${esc(o.item.title)}</div></div>
     <span class="rz" aria-hidden="true"></span><span class="rzx" aria-hidden="true" title="Arraste para os lados para ocupar outros dias"></span></div>`;
 }
 
@@ -847,7 +936,7 @@ export function gridHTML(days: string[]) {
           const s1 = Math.max(x.s, HOUR_START * 60);
           const lab =
             d === x.tr.date || d === days[0]
-              ? `<button class="trip-l" data-travel="${esc(x.tr.id)}" title="${esc(travelText(x.tr))}">Viagem${
+              ? `<button class="trip-l" data-travel="${esc(x.tr.id)}" data-tooltip-travel="${esc(x.tr.id)}">Viagem${
                   x.tr.title ? ': ' + esc(x.tr.title) : ''
                 } · volta ${fmtDW(x.tr.endDate)} ${fmtH(x.tr.end)}</button>`
               : '';
@@ -942,7 +1031,7 @@ export function monthHTML() {
         .slice(0, 3)
         .map(
           (o) =>
-            `<div class="chip st-${effStatus(o)}" data-key="${esc(
+            `<div class="chip st-${effStatus(o)}" ${tooltipAttr(o)} data-key="${esc(
               o.key
             )}" tabindex="0" role="button" style="--c:${safeColor(cat(o.item.category).color)}"><i></i>${esc(
               occTitle(o)
@@ -953,7 +1042,7 @@ export function monthHTML() {
       const tr0 = tsegs[0] && tsegs[0].tr;
       const tlab =
         tr0 && (d === tr0.date || dow(d) === 0)
-          ? `<button class="m-trip" data-travel="${esc(tr0.id)}" title="${esc(travelText(tr0))}">Viagem${
+          ? `<button class="m-trip" data-travel="${esc(tr0.id)}" data-tooltip-travel="${esc(tr0.id)}">Viagem${
               tr0.title ? ': ' + esc(tr0.title) : ''
             }</button>`
           : '';
@@ -1022,7 +1111,7 @@ export function listHTML() {
             `<div class="lgroup"><h3>${fmtDL(d)}${d === t ? ' · hoje' : ''}</h3>${os
               .map((o) => {
                 const es = effStatus(o);
-                return `<button class="lrow" data-open="${esc(o.key)}"><span class="dot" style="--c:${safeColor(
+                return `<button class="lrow" data-open="${esc(o.key)}" ${tooltipAttr(o)}><span class="dot" style="--c:${safeColor(
                   cat(o.item.category).color
                 )}"></span><span class="num muted small">${fmtH(o.start)}–${fmtH(o.end)}</span><b>${esc(occTitle(o))} ${
                   o.isSub ? '' : markIcons(o.item)

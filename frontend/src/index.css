@@ -1011,6 +1011,18 @@ svg.i {
   flex: 0 1 auto;
   min-width: 45%;
 }
+.ev:not(.subev) .ev-top {
+  justify-content: center;
+  width: 100%;
+}
+.ev:not(.subev) .ev-top .ev-t {
+  text-align: center;
+  flex: 1 1 100%;
+}
+.ev.short:not(.subev) .ev-top {
+  flex: 1 1 100%;
+  min-width: 0;
+}
 .chip .ev-ic svg.i {
   width: 11px;
   height: 11px;
@@ -2527,6 +2539,35 @@ svg.i {
 #app .mini-h,
 #app .cats label {
   font-weight: 300 !important;
+}
+
+.tippy-box[data-theme~='agenda'] {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .28);
+  font: 13px/1.4 var(--font-body);
+}
+.tippy-box[data-theme~='agenda'] .tippy-content { padding: 12px 14px; }
+.tippy-box[data-theme~='agenda'] .tippy-arrow { color: var(--surface); }
+.activity-tooltip { display: grid; gap: 6px; min-width: 190px; }
+.activity-tooltip-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.activity-tooltip-row { display: flex; justify-content: space-between; gap: 16px; }
+.activity-tooltip-row span:first-child { color: var(--muted); }
+.activity-tooltip-row span:last-child { text-align: right; }
+.activity-tooltip-note {
+  margin: 5px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--muted);
 }
 
 /* Efeitos em Loop - Borda do Pastor e Botão Entrar */
