@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agenda-inteligente-apple-pwa-v1';
+const CACHE_NAME = 'agenda-inteligente-apple-pwa-v2';
 const ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
