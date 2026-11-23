@@ -212,6 +212,10 @@ Todas as variáveis sensíveis ficam isoladas e protegidas via `.gitignore`. Ao 
 | `ADMIN_LOGIN` | Nome de usuário da conta administradora | `keidson.rodrigues` | Sim |
 | `ADMIN_PASSWORD` | Senha da conta administradora | `uma_senha_forte` | Sim |
 | `GEMINI_API_KEY` | Chave de API Google Gemini para recursos da IA | `AIzaSy...` | Opcional |
+| `VAPID_SUBJECT` | Contato do remetente Web Push | `mailto:suporte@seudominio.com` | Sim, para Push |
+| `VAPID_PUBLIC_KEY` | Chave pública VAPID | gerada no servidor | Sim, para Push |
+| `VAPID_PRIVATE_KEY` | Chave privada VAPID | segredo do servidor | Sim, para Push |
+| `PUSH_TIMEZONE` | Fuso dos lembretes | `America/Fortaleza` | Não |
 
 ---
 

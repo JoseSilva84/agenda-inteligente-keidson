@@ -27,6 +27,7 @@ import {
 } from './agendaHelpers';
 import { S, Store, Undo, ensureSettings, findOcc, isRec, suggestAll } from './agendaCore';
 import { chime, initAudio, normSettings, toast, setPastorAvatar, resetPastorAvatar } from './agendaStorage';
+import { disableWebPush, enableWebPush, getWebPushStatus, testWebPush } from '../services/webPush';
 import {
   $,
   $$,
@@ -533,9 +534,18 @@ function pendSug(key: string) {
 }
 
 let engineInitialized = false;
+
+async function refreshWebPushStatus() {
+  S.webPush = await getWebPushStatus();
+  if (S.tab === 'ajustes') render();
+}
+
 export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) {
   S.onRender = () => render();
-  S.onAfterLoad = () => checkReminders(showModal);
+  S.onAfterLoad = () => {
+    checkReminders(showModal);
+    void refreshWebPushStatus();
+  };
 
   const h = location.hash.slice(1);
   if (TABS.some((x) => x[0] === h)) S.tab = h;
@@ -547,6 +557,11 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
   engineInitialized = true;
 
   document.addEventListener('pointerdown', () => initAudio(), { passive: true });
+
+  navigator.serviceWorker?.addEventListener('message', (event) => {
+    if (event.data?.type !== 'push-subscription-change') return;
+    void enableWebPush().then(refreshWebPushStatus).catch(() => {});
+  });
 
   // Navegação entre períodos/semanas ao deslizar horizontalmente no trackpad (2 ou 3 dedos) ou swipe touch
   let trackpadDeltaX = 0;
@@ -1171,6 +1186,35 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
           await Notification.requestPermission();
         } catch {}
         render();
+        return;
+      }
+      if (act === 'webpush-enable') {
+        try {
+          S.webPush = await enableWebPush();
+          toast('Notificações Push ativadas neste aparelho.');
+        } catch (error: any) {
+          toast(error?.message || 'Não foi possível ativar as notificações Push.', 'warn');
+        }
+        render();
+        return;
+      }
+      if (act === 'webpush-disable') {
+        try {
+          S.webPush = await disableWebPush();
+          toast('Notificações Push desativadas neste aparelho.');
+        } catch (error: any) {
+          toast(error?.message || 'Não foi possível desativar as notificações Push.', 'warn');
+        }
+        render();
+        return;
+      }
+      if (act === 'webpush-test') {
+        try {
+          const sent = await testWebPush();
+          toast(sent ? 'Teste enviado para este aparelho.' : 'Nenhum aparelho inscrito recebeu o teste.', sent ? undefined : 'warn');
+        } catch (error: any) {
+          toast(error?.response?.data?.error || 'Não foi possível enviar o teste Push.', 'warn');
+        }
         return;
       }
       if (act === 'catadd') {

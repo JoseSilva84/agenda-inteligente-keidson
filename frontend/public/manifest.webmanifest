@@ -3,6 +3,7 @@
   "short_name": "Agenda Pro",
   "description": "Plataforma inteligente de planejamento diário, semanal, mensal e anual com IA, anexos e gestão ministerial — otimizada para MacBook, iPhone e iPad.",
   "start_url": "/",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

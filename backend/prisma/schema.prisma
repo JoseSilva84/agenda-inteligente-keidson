@@ -8,22 +8,24 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
+  id           String   @id @default(uuid())
   name         String
-  email        String         @unique
+  email        String   @unique
   passwordHash String
-  role         String         @default("owner") // owner, admin, user
-  theme        String         @default("dark")  // dark, light, system
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  role         String   @default("owner") // owner, admin, user
+  theme        String   @default("dark") // dark, light, system
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  settings      UserSettings?
-  activities    Activity[]
-  travels       Travel[]
-  people        Person[]
-  notifications Notification[]
-  files         FileAsset[]
-  auditLogs     AuditLog[]
+  settings          UserSettings?
+  activities        Activity[]
+  travels           Travel[]
+  people            Person[]
+  notifications     Notification[]
+  pushSubscriptions PushSubscription[]
+  pushDeliveries    PushDelivery[]
+  files             FileAsset[]
+  auditLogs         AuditLog[]
 }
 
 model UserSettings {
@@ -40,31 +42,31 @@ model UserSettings {
 }
 
 model Activity {
-  id               String   @id
+  id               String  @id
   userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   title            String
-  date             String   // YYYY-MM-DD
-  start            String   // HH:MM
-  end              String   // HH:MM
-  status           String   @default("planejada") // planejada, concluida, pendente, cancelada, reagendada
+  date             String // YYYY-MM-DD
+  start            String // HH:MM
+  end              String // HH:MM
+  status           String  @default("planejada") // planejada, concluida, pendente, cancelada, reagendada
   category         String
-  priority         String   @default("media")     // alta, media, baixa
-  recur            Json     // { freq, days, until, dates }
-  reminder         Int      @default(30)
-  fixed            Boolean  @default(false)
-  deadline         String   @default("")
-  autoResched      Boolean  @default(true)
-  kept             Boolean  @default(false)
-  span             Boolean  @default(false)
-  notes            String   @default("")
-  subtasks         Json     @default("[]")
-  links            Json     @default("[]")
-  files            Json     @default("[]")
-  history          Json     @default("[]")
-  overrides        Json     @default("{}")
+  priority         String  @default("media") // alta, media, baixa
+  recur            Json // { freq, days, until, dates }
+  reminder         Int     @default(30)
+  fixed            Boolean @default(false)
+  deadline         String  @default("")
+  autoResched      Boolean @default(true)
+  kept             Boolean @default(false)
+  span             Boolean @default(false)
+  notes            String  @default("")
+  subtasks         Json    @default("[]")
+  links            Json    @default("[]")
+  files            Json    @default("[]")
+  history          Json    @default("[]")
+  overrides        Json    @default("{}")
   origin           Json?
-  rescheduledCount Int      @default(0)
+  rescheduledCount Int     @default(0)
   createdAt        BigInt
   updatedAt        BigInt
 
@@ -114,15 +116,42 @@ model Notification {
   @@index([userId, at])
 }
 
+model PushSubscription {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint        String   @unique
+  p256dh          String
+  auth            String
+  contentEncoding String   @default("aes128gcm")
+  userAgent       String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model PushDelivery {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityId   String
+  occurrenceAt String
+  sentAt       DateTime @default(now())
+
+  @@unique([userId, activityId, occurrenceAt])
+  @@index([userId, sentAt])
+}
+
 model FileAsset {
-  id        String   @id
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  mimeType  String
-  size      Int
-  dataBase64 String  @db.Text
-  createdAt DateTime @default(now())
+  id         String   @id
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  mimeType   String
+  size       Int
+  dataBase64 String   @db.Text
+  createdAt  DateTime @default(now())
 
   @@index([userId])
 }

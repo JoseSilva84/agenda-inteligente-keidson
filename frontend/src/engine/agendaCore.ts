@@ -25,6 +25,7 @@ export const S: any = {
   peopleTab: 'aniversario',
   settings: null as any,
   notifs: [] as any[],
+  webPush: null as any,
   tab: 'agenda',
   view: typeof window !== 'undefined' && window.innerWidth < 720 ? 'day' : 'week',
   cursor: todayY(),

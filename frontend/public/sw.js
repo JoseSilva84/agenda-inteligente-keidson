@@ -33,3 +33,39 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(request).then((res) => res || caches.match('/index.html')))
   );
 });
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : '' };
+  }
+  const title = payload.title || 'Agenda Inteligente';
+  const options = {
+    body: payload.body || 'Você tem uma atualização na sua agenda.',
+    icon: '/pastor.jpg',
+    badge: '/icon.svg',
+    tag: payload.tag || 'agenda-inteligente',
+    renotify: true,
+    data: { url: payload.url || '/#agenda', ...(payload.data || {}) }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || '/#agenda', self.location.origin).href;
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const existing = windows.find((client) => client.url.startsWith(self.location.origin));
+      return existing ? existing.focus() : clients.openWindow(url);
+    })
+  );
+});
+
+self.addEventListener('pushsubscriptionchange', () => {
+  self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+    windows.forEach((client) => client.postMessage({ type: 'push-subscription-change' }));
+  });
+});

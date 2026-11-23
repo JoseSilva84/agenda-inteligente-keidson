@@ -7,6 +7,8 @@ import { isPostgresConnected } from './lib/db';
 import authRoutes from './routes/auth';
 import agendaRoutes from './routes/agenda';
 import assistantRoutes from './routes/assistant';
+import pushRoutes from './routes/push';
+import { startReminderScheduler } from './lib/pushScheduler';
 
 dotenv.config();
 
@@ -40,6 +42,7 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/agenda', agendaRoutes);
 app.use('/api/assistant', assistantRoutes);
+app.use('/api/push', pushRoutes);
 
 // Em produção (ex.: container unificado no Coolify / Docker), serve o build estático do frontend PWA
 const candidatePaths = [
@@ -59,5 +62,6 @@ if (frontendDist) {
 
 app.listen(PORT, '0.0.0.0', async () => {
   await isPostgresConnected();
+  startReminderScheduler();
   console.log(`🚀 [Agenda Inteligente API] Servidor rodando em http://localhost:${PORT}`);
 });

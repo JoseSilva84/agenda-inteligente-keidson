@@ -36,6 +36,10 @@ services:
       ADMIN_LOGIN: ${ADMIN_LOGIN:-keidson.rodrigues}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-troque_por_uma_senha_forte}
       ADMIN_NAME: ${ADMIN_NAME:-Pr. Keidson Rodrigues}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:suporte@localhost}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      PUSH_TIMEZONE: ${PUSH_TIMEZONE:-America/Fortaleza}
 
 volumes:
   postgres_data:

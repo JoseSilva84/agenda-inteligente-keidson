@@ -1756,6 +1756,16 @@ export function settingsHTML() {
   const st = ST();
   const ro = S.readOnly ? 'disabled' : '';
   const perm = 'Notification' in window ? Notification.permission : 'unsupported';
+  const push = S.webPush;
+  const pushMessage = !push
+    ? 'Verificando a disponibilidade de notificações em segundo plano…'
+    : !push.supported
+    ? push.reason
+    : !push.enabled
+    ? push.reason || 'O servidor ainda não foi configurado para Web Push.'
+    : push.subscribed
+    ? `Ativo neste aparelho${push.devices > 1 ? ` · ${push.devices} aparelhos conectados` : ''}.`
+    : 'Ative para receber avisos mesmo com a Agenda fechada.';
   const curTheme = document.documentElement.getAttribute('data-theme') || 'dark';
   return `<section class="page">
     <div class="page-h"><div><h1>Ajustes</h1><p>Como a agenda organiza seu tempo, aparência Apple (Light/Dark), categorias e seus dados no PostgreSQL.</p></div></div>
@@ -1823,6 +1833,16 @@ export function settingsHTML() {
         perm === 'default' ? '<button class="btn btn-sm" data-act="notifperm">Ativar avisos do navegador</button>' : ''
       }<button class="btn btn-sm" data-act="notiftest">Testar lembrete</button></div>
       <p class="note">Com a agenda aberta (mesmo em outra aba), o lembrete toca um som, vibra no celular, pisca o título da aba e abre um aviso na tela. Para ser avisado com a agenda fechada, use o botão “Google Agenda” na atividade: o Google Agenda do seu iPhone/iPad/Mac avisa no horário.</p></div>
+    <div class="card"><h2 style="margin-bottom:8px">Notificações Push</h2>
+      <p class="muted" style="margin:0 0 10px">${esc(pushMessage || '')}</p>
+      <div class="actions">${
+        push?.supported && push?.enabled
+          ? push.subscribed
+            ? '<button class="btn btn-sm" data-act="webpush-test">Enviar teste Push</button><button class="btn btn-sm" data-act="webpush-disable">Desativar neste aparelho</button>'
+            : '<button class="btn btn-sm btn-primary" data-act="webpush-enable">Ativar notificações Push</button>'
+          : ''
+      }</div>
+      <p class="note">No iPad e iPhone, instale a Agenda na Tela de Início antes de ativar. No MacBook, Safari 16 ou superior pode receber avisos mesmo com o navegador fechado.</p></div>
     <div class="card"><h2 style="margin-bottom:8px">Seus dados</h2>
       <p class="muted" style="margin:0 0 10px">Sua agenda é sincronizada com o banco PostgreSQL (Prisma ORM) e armazenada em cache PWA no seu dispositivo Apple.</p>
       <div class="actions"><button class="btn btn-sm" data-act="export">${ic(
