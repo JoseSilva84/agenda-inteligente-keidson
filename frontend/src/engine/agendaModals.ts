@@ -56,6 +56,7 @@ import {
   render,
   scheduleRender,
   setTab,
+  updateHeader,
   waLink,
   warnConflicts
 } from './agendaRenderers';
@@ -1676,6 +1677,151 @@ export async function copyText(t: string) {
       { cls: 'sm' }
     );
   }
+}
+
+export function openNotifHistory() {
+  let filter = 'all'; // 'all' | 'unread' | 'read'
+
+  const getList = () => {
+    if (filter === 'unread') return S.notifs.filter((n: any) => !n.read);
+    if (filter === 'read') return S.notifs.filter((n: any) => n.read);
+    return S.notifs;
+  };
+
+  const renderContent = (w: HTMLElement) => {
+    const list = getList();
+    const box = $('#notif-hist-list', w);
+    const subTitle = $('#notif-hist-sub', w);
+    if (subTitle) {
+      subTitle.textContent = `${S.notifs.length} ${plural(S.notifs.length, 'notificação registrada', 'notificações registradas')}`;
+    }
+    if (!box) return;
+
+    if (!list.length) {
+      box.innerHTML = `<div style="text-align:center;padding:36px 16px;color:var(--muted)">
+        <svg class="i" viewBox="0 0 24 24" style="width:36px;height:36px;margin:0 auto 10px;opacity:0.4;display:block">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+        </svg>
+        <p style="margin:0;font-weight:600;font-size:14px">Nenhuma notificação encontrada</p>
+        <p style="margin:4px 0 0;font-size:12.5px">${filter === 'unread' ? 'Você não possui notificações pendentes.' : 'Seu histórico está limpo.'}</p>
+      </div>`;
+      return;
+    }
+
+    box.innerHTML = list
+      .map((n: any) => {
+        const d = new Date(n.at);
+        const dateStr = d.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        const isReminder = n.type === 'reminder' || (n.title || '').toLowerCase().includes('lembrete');
+        return `<div class="nrow ${n.read ? '' : 'unread'}" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);background:${
+          n.read ? 'transparent' : 'rgba(79, 70, 229, 0.05)'
+        };position:relative;">
+          <div style="flex:none;margin-top:2px;">
+            <span style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:${
+              n.read ? 'var(--soft)' : 'rgba(79, 70, 229, 0.15)'
+            };color:${n.read ? 'var(--muted)' : 'var(--accent)'};font-size:14px">
+              ${isReminder ? '🔔' : '📌'}
+            </span>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+              <span style="font-weight:700;font-size:13.5px;color:var(--ink)">${esc(n.title)}</span>
+              ${!n.read ? '<span style="flex:none;font-size:10px;font-weight:700;padding:1.5px 6px;border-radius:10px;background:#EC4899;color:#fff">Pendente</span>' : ''}
+            </div>
+            <div style="font-size:13px;color:var(--ink);line-height:1.45;word-break:break-word">${esc(n.body)}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px">
+              <span class="muted small num" style="font-size:11.5px">${dateStr}</span>
+              ${!n.read ? `<button type="button" class="btn btn-sm" data-mark-one="${n.id}" style="height:24px;padding:0 8px;font-size:11px">Marcar como lida</button>` : ''}
+            </div>
+          </div>
+        </div>`;
+      })
+      .join('');
+  };
+
+  showModal(
+    `<div class="m-h" style="display:flex;align-items:center;gap:10px;">
+      <svg class="i" viewBox="0 0 24 24" style="width:20px;height:20px;color:var(--accent)"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      <div>
+        <h2 style="font-size:17px;margin:0;font-weight:700">Histórico de Notificações</h2>
+        <span class="muted small" id="notif-hist-sub">${S.notifs.length} ${plural(S.notifs.length, 'notificação registrada', 'notificações registradas')}</span>
+      </div>
+    </div>
+    <div class="m-b" style="padding:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg);flex-wrap:wrap">
+        <div class="seg" role="group">
+          <button type="button" data-hist-filter="all" aria-pressed="true">Todas (${S.notifs.length})</button>
+          <button type="button" data-hist-filter="unread" aria-pressed="false">Pendentes (${S.notifs.filter((n: any) => !n.read).length})</button>
+          <button type="button" data-hist-filter="read" aria-pressed="false">Lidas</button>
+        </div>
+        <div style="display:flex;gap:6px">
+          ${S.notifs.some((n: any) => !n.read) ? '<button type="button" class="btn btn-sm" data-act="hist-readall">Marcar todas lidas</button>' : ''}
+          ${S.notifs.length ? '<button type="button" class="btn btn-sm btn-danger" data-act="hist-clear">Limpar histórico</button>' : ''}
+        </div>
+      </div>
+      <div id="notif-hist-list" style="max-height:55vh;overflow-y:auto"></div>
+    </div>
+    <div class="m-f">
+      <span class="sp"></span>
+      <button type="button" class="btn btn-primary" data-close>Fechar</button>
+    </div>`,
+    (w) => {
+      renderContent(w);
+
+      w.addEventListener('click', async (e: MouseEvent) => {
+        const b = (e.target as HTMLElement).closest('button');
+        if (!b) return;
+
+        if (b.dataset.histFilter) {
+          filter = b.dataset.histFilter;
+          $$('[data-hist-filter]', w).forEach((btn) => btn.setAttribute('aria-pressed', String(btn === b)));
+          renderContent(w);
+          return;
+        }
+
+        if (b.dataset.markOne) {
+          const id = b.dataset.markOne;
+          const notif = S.notifs.find((n: any) => n.id === id);
+          if (notif) {
+            notif.read = true;
+            Store.write('notifs');
+            updateHeader();
+            renderContent(w);
+          }
+          return;
+        }
+
+        if (b.dataset.act === 'hist-readall') {
+          S.notifs = S.notifs.map((n: any) => ({ ...n, read: true }));
+          Store.write('notifs');
+          updateHeader();
+          renderContent(w);
+          toast('Todas as notificações foram marcadas como lidas.');
+          return;
+        }
+
+        if (b.dataset.act === 'hist-clear') {
+          const ok = await ask('Limpar notificações', 'Deseja apagar todo o histórico de notificações?', [
+            { label: 'Cancelar', value: null },
+            { label: 'Apagar tudo', value: 'y', kind: 'btn-danger' }
+          ]);
+          if (!ok) return;
+          S.notifs = [];
+          Store.write('notifs');
+          updateHeader();
+          renderContent(w);
+          toast('Histórico de notificações limpo.');
+          return;
+        }
+      });
+    }
+  );
 }
 
 export { setTab };

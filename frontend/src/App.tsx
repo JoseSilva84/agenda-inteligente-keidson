@@ -6,7 +6,8 @@ import { AiAssistantModal } from './components/AiAssistantModal';
 import { api, clearStoredAuth, getStoredAuth } from './services/api';
 import { ThemeMode, UserProfile } from './types/agenda';
 import { S } from './engine/agendaCore';
-import { render } from './engine/agendaRenderers';
+import { render, renderNotifSubmenu } from './engine/agendaRenderers';
+import { openNotifHistory } from './engine/agendaModals';
 import { initAgendaEngine } from './engine/agendaEvents';
 
 const THEME_KEY = 'agenda-inteligente-theme';
@@ -29,6 +30,8 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
   const qTimerRef = useRef<any>(null);
   const utilityMenuRef = useRef<HTMLDetailsElement>(null);
   const utilityMenuTimerRef = useRef<any>(null);
+  const notifSubTimerRef = useRef<any>(null);
+  const [isNotifSubOpen, setIsNotifSubOpen] = useState(false);
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isAiMaximized, setIsAiMaximized] = useState(false);
 
@@ -44,6 +47,11 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
           clearTimeout(utilityMenuTimerRef.current);
           utilityMenuTimerRef.current = null;
         }
+        if (notifSubTimerRef.current) {
+          clearTimeout(notifSubTimerRef.current);
+          notifSubTimerRef.current = null;
+        }
+        setIsNotifSubOpen(false);
         utilityMenuRef.current.open = false;
       }
     };
@@ -53,6 +61,9 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
       if (utilityMenuTimerRef.current) {
         clearTimeout(utilityMenuTimerRef.current);
       }
+      if (notifSubTimerRef.current) {
+        clearTimeout(notifSubTimerRef.current);
+      }
     };
   }, []);
 
@@ -61,7 +72,30 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
       clearTimeout(utilityMenuTimerRef.current);
       utilityMenuTimerRef.current = null;
     }
+    if (notifSubTimerRef.current) {
+      clearTimeout(notifSubTimerRef.current);
+      notifSubTimerRef.current = null;
+    }
+    setIsNotifSubOpen(false);
     if (utilityMenuRef.current) utilityMenuRef.current.open = false;
+  };
+
+  const handleNotifMouseEnter = () => {
+    if (notifSubTimerRef.current) {
+      clearTimeout(notifSubTimerRef.current);
+      notifSubTimerRef.current = null;
+    }
+    setIsNotifSubOpen(true);
+    renderNotifSubmenu();
+  };
+
+  const handleNotifMouseLeave = () => {
+    if (notifSubTimerRef.current) {
+      clearTimeout(notifSubTimerRef.current);
+    }
+    notifSubTimerRef.current = setTimeout(() => {
+      setIsNotifSubOpen(false);
+    }, 180);
   };
 
   const handleMenuMouseEnter = () => {
@@ -169,13 +203,78 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
                 </svg>
                 <span>{effectiveDark ? 'Modo claro' : 'Modo dark'}</span>
               </button>
-              <button type="button" id="bell" onClick={closeUtilityMenu}>
-                <svg className="i utility-item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-                </svg>
-                <span>Notificação</span>
-                <span className="badge" id="bellcount"></span>
-              </button>
+              <div
+                className="utility-sub-wrap"
+                onMouseEnter={handleNotifMouseEnter}
+                onMouseLeave={handleNotifMouseLeave}
+              >
+                <button
+                  type="button"
+                  id="bell"
+                  className="utility-sub-trigger"
+                  onClick={() => {
+                    setIsNotifSubOpen((prev) => !prev);
+                    renderNotifSubmenu();
+                  }}
+                  aria-haspopup="true"
+                  aria-expanded={isNotifSubOpen}
+                >
+                  <svg className="i utility-item-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+                  </svg>
+                  <span>Notificação</span>
+                  <span className="badge" id="bellcount"></span>
+                  <svg className="i utility-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+
+                <div
+                  className={`utility-sub-panel ${isNotifSubOpen ? 'is-open' : ''}`}
+                  id="notif-sub-panel"
+                  role="region"
+                  aria-label="Notificações pendentes e histórico"
+                >
+                  <div className="utility-sub-header">
+                    <div className="utility-sub-title">
+                      <svg className="i" viewBox="0 0 24 24" aria-hidden="true" style={{ width: 16, height: 16, color: 'var(--accent)' }}>
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+                      </svg>
+                      <b>Notificações</b>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-mark-all"
+                      id="notif-sub-readall"
+                      title="Marcar todas como lidas"
+                    >
+                      Marcar lidas
+                    </button>
+                  </div>
+
+                  <div className="utility-sub-body" id="notif-sub-list">
+                    {/* Renderizado dinamicamente por renderNotifSubmenu() */}
+                  </div>
+
+                  <div className="utility-sub-footer">
+                    <button
+                      type="button"
+                      className="notif-history-action"
+                      id="btn-open-notif-history"
+                      data-act="open-notif-history"
+                      onClick={() => {
+                        closeUtilityMenu();
+                        openNotifHistory();
+                      }}
+                    >
+                      <svg className="i" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+                      </svg>
+                      <span>Ver histórico de notificações</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
               <button type="button" onClick={() => { closeUtilityMenu(); onLogout(); }}>
                 <svg className="i utility-item-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <rect x="5" y="10" width="14" height="10" rx="2" />

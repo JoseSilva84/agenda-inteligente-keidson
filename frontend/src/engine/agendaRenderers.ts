@@ -540,6 +540,70 @@ export function updateHeader() {
   if (bc) bc.textContent = unread ? String(unread) : '';
   const utilityCount = $('#utility-count');
   if (utilityCount) utilityCount.textContent = unread ? String(unread) : '';
+  renderNotifSubmenu();
+}
+
+export function renderNotifSubmenu() {
+  const box = $('#notif-sub-list');
+  if (!box) return;
+  const unreadList = S.notifs.filter((n: any) => !n.read);
+  const pc = pendingOccs();
+  const subCount = $('#notif-sub-count');
+  if (subCount) {
+    const totalPending = unreadList.length + pc.length;
+    subCount.textContent = totalPending ? String(totalPending) : '0';
+  }
+  const readAllBtn = $('#notif-sub-readall') as HTMLButtonElement | null;
+  if (readAllBtn) {
+    readAllBtn.style.display = unreadList.length ? 'inline-block' : 'none';
+  }
+
+  let html = '';
+
+  // Pendências de remarcação da agenda
+  if (pc.length) {
+    html += `<div class="notif-sub-item pend-item" data-tab="pendencias" style="cursor:pointer;background:rgba(236,72,153,0.08);border-left:3px solid #EC4899;padding:9px 12px;margin-bottom:6px;border-radius:6px;transition:background 0.15s;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <span style="font-weight:700;font-size:12.5px;color:#EC4899">⚠️ ${pc.length} ${plural(pc.length, 'pendência para remarcar', 'pendências para remarcar')}</span>
+        <span style="font-size:11px;font-weight:600;color:#EC4899;text-decoration:underline">Ver</span>
+      </div>
+      <p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">Atividades que não foram concluídas e precisam de novo horário.</p>
+    </div>`;
+  }
+
+  // Notificações pendentes / não lidas
+  if (unreadList.length) {
+    html += unreadList
+      .slice(0, 6)
+      .map((n: any) => {
+        const d = new Date(n.at);
+        const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        return `<div class="notif-sub-item unread" data-notif-id="${n.id}" style="padding:9px 11px;border-bottom:1px solid var(--line);border-radius:6px;margin-bottom:4px;background:rgba(79,70,229,0.06);position:relative;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <b style="font-size:12.5px;color:var(--ink);">${esc(n.title)}</b>
+            <span class="muted small" style="font-size:10.5px">${dateStr} ${timeStr}</span>
+          </div>
+          <div style="font-size:12px;color:var(--ink);margin-top:2px;line-height:1.35;opacity:0.9">${esc(n.body)}</div>
+        </div>`;
+      })
+      .join('');
+    if (unreadList.length > 6) {
+      html += `<div style="text-align:center;padding:6px;font-size:11.5px;color:var(--muted)">+ ${unreadList.length - 6} outras notificações pendentes</div>`;
+    }
+  }
+
+  if (!unreadList.length && !pc.length) {
+    html = `<div style="text-align:center;padding:24px 12px;color:var(--muted)">
+      <svg class="i" viewBox="0 0 24 24" style="width:26px;height:26px;margin:0 auto 6px;opacity:0.4;display:block">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+      </svg>
+      <p style="margin:0;font-size:12.5px;font-weight:600">Nenhuma notificação pendente</p>
+      <p style="margin:2px 0 0;font-size:11.5px">Lembretes e avisos aparecerão aqui.</p>
+    </div>`;
+  }
+
+  box.innerHTML = html;
 }
 
 export function renderBanner() {

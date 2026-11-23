@@ -64,6 +64,7 @@ import {
   openResched,
   openStudy,
   openTravel,
+  openNotifHistory,
   seed,
   showModal
 } from './agendaModals';
@@ -834,14 +835,41 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
       if (c.dataset.tab) setTab(c.dataset.tab);
       return;
     }
-    if (t.closest('#bell')) {
-      S.popOpen = !S.popOpen;
-      renderPop();
+    if (t.closest('#notif-sub-readall')) {
+      S.notifs = S.notifs.map((n: any) => ({ ...n, read: true }));
+      Store.write('notifs');
+      updateHeader();
+      toast('Notificações marcadas como lidas.');
       return;
     }
-    if (S.popOpen && !t.closest('.pop')) {
-      S.popOpen = false;
-      renderPop();
+    if (t.closest('[data-act="open-notif-history"]')) {
+      const details = document.querySelector('.utility-menu') as HTMLDetailsElement | null;
+      if (details) details.open = false;
+      openNotifHistory();
+      return;
+    }
+    const notifItem = t.closest('.notif-sub-item') as HTMLElement | null;
+    if (notifItem) {
+      const details = document.querySelector('.utility-menu') as HTMLDetailsElement | null;
+      if (details) details.open = false;
+      if (notifItem.dataset.tab) {
+        setTab(notifItem.dataset.tab);
+        return;
+      }
+      if (notifItem.dataset.notifId) {
+        const notif = S.notifs.find((n: any) => n.id === notifItem.dataset.notifId);
+        if (notif) {
+          notif.read = true;
+          Store.write('notifs');
+          updateHeader();
+        }
+      }
+      return;
+    }
+    if (t.closest('#bell')) {
+      // Abre o histórico diretamente ou foca o painel
+      openNotifHistory();
+      return;
     }
     if (t.closest('.overlay')) return;
     const tab = t.closest('[data-tab]') as HTMLElement | null;
