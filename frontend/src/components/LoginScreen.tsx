@@ -130,17 +130,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <div className="login-brand-title">
+          <div className="login-brand-title" style={{ gap: '8px' }}>
             <span
               className="login-brand-agenda"
               style={{
-                color: effectiveDark ? '#E7EAF5' : '#141A2E',
-                fontSize: '20px',
-                fontWeight: 700,
-                letterSpacing: '0.02em'
+                color: effectiveDark ? '#ffffff' : '#0f172a',
+                fontSize: '26px',
+                fontWeight: 800,
+                letterSpacing: '-0.025em'
               }}
             >
-              AGENDA INTELIGENTE
+              Smart
+            </span>
+            <span className="brand-accent-text" style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.025em' }}>
+              Vida
             </span>
           </div>
         </div>
@@ -397,6 +400,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <span>Ecossistema Apple · MacBook · iPad · iPhone</span>
           </div>
         </motion.div>
+
+        {/* Bottom Info - Copyright Pr. Keidson Rodrigues */}
+        <footer className="login-footer">
+          © 2026 Pr. Keidson Rodrigues. Todos os direitos reservados.
+        </footer>
       </main>
 
       {/* Modal Guia de Instalação Apple (MacBook, iPad e iPhone) */}
@@ -572,11 +580,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </motion.div>
         </div>
       )}
-
-      {/* Bottom Info - Copyright Pr. Keidson Rodrigues */}
-      <footer className="login-footer">
-        © 2026 Pr. Keidson Rodrigues. Todos os direitos reservados.
-      </footer>
     </div>
   );
 };
