@@ -117,6 +117,31 @@ export function fmtDur(m: number) {
   return h ? (r ? `${h}h${pad(r)}` : `${h}h`) : `${r} min`;
 }
 
+export function noteToPlain(s?: string): string {
+  const raw = String(s || '');
+  if (!raw) return '';
+  if (!/<[a-z][\s\S]*>/i.test(raw)) return raw;
+  const withBreaks = raw
+    .replace(/<\/(div|p|li|h[1-6])>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li>/gi, '• ');
+  const tmp = typeof document !== 'undefined' ? document.createElement('div') : null;
+  if (tmp) {
+    tmp.innerHTML = withBreaks;
+    return (tmp.textContent || tmp.innerText || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  return withBreaks.replace(/<[^>]+>/g, '').trim();
+}
+
+export function noteToHtml(s?: string): string {
+  const raw = String(s || '');
+  if (!raw.trim()) return '';
+  if (/<(b|strong|i|em|u|s|strike|del|ul|ol|li|div|p|br|span)\b/i.test(raw)) {
+    return raw;
+  }
+  return esc(raw).replace(/\r?\n/g, '<br>');
+}
+
 export function triggerBrowserDownload(filename: string, data: Blob | ArrayBuffer | string) {
   let blob: Blob;
   if (data instanceof Blob) blob = data;

@@ -2073,6 +2073,145 @@ body.touch-locked .ev .rzx {
   resize: vertical;
   min-height: 70px;
 }
+/* Rich Text Formatting Toolbar & Editor for Anotações */
+.rte-field {
+  gap: 6px;
+}
+.rte-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rte-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.rte-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.rte-btn {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  width: 26px;
+  height: 24px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+  user-select: none;
+}
+.rte-btn:hover {
+  background: var(--soft);
+  color: var(--accent);
+}
+.rte-btn:active {
+  transform: scale(0.94);
+}
+.rte-btn b {
+  font-weight: 800 !important;
+}
+.rte-btn i {
+  font-style: italic !important;
+  font-family: Georgia, serif;
+}
+.rte-btn u {
+  text-decoration: underline !important;
+}
+.rte-btn s {
+  text-decoration: line-through !important;
+}
+.rte-sep {
+  width: 1px;
+  height: 15px;
+  background: var(--line);
+  margin: 0 2px;
+}
+.rte-editor {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: var(--ink);
+  font-weight: 400;
+  font-size: 14.5px;
+  line-height: 1.5;
+  min-height: 88px;
+  max-height: 220px;
+  overflow-y: auto;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.rte-editor:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.rte-editor.is-empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  opacity: 0.65;
+  pointer-events: none;
+}
+.rte-editor b,
+.rte-editor strong,
+.activity-tooltip-note b,
+.activity-tooltip-note strong {
+  font-weight: 700 !important;
+}
+.rte-editor i,
+.rte-editor em,
+.activity-tooltip-note i,
+.activity-tooltip-note em {
+  font-style: italic !important;
+}
+.rte-editor u,
+.activity-tooltip-note u {
+  text-decoration: underline !important;
+}
+.rte-editor s,
+.rte-editor strike,
+.rte-editor del,
+.activity-tooltip-note s,
+.activity-tooltip-note strike,
+.activity-tooltip-note del {
+  text-decoration: line-through !important;
+}
+.rte-editor ul,
+.rte-editor ol,
+.activity-tooltip-note ul,
+.activity-tooltip-note ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.rte-editor ul {
+  list-style-type: disc;
+}
+.rte-editor ol {
+  list-style-type: decimal;
+}
+:root[data-theme="light"] .rte-editor {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+}
+:root[data-theme="light"] .rte-editor:focus {
+  border-color: #4F46E5;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
 .check {
   display: flex;
   gap: 8px;

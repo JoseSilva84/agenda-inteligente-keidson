@@ -142,18 +142,14 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
       transition={{ duration: 0.2 }}
     >
       <header className="top">
-        <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="brand">
           <div className="mark">
             <svg className="i" viewBox="0 0 24 24">
               <rect x="3" y="4.5" width="18" height="16" rx="3" />
               <path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3" />
             </svg>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span>AGENDA</span>
-            <span className="brand-accent-text">INTELIGENTE</span>
-            <span className="brand-pro-badge">PRO</span>
-          </div>
+          <span>AGENDA INTELIGENTE</span>
         </div>
         <nav className="tabs" id="tabs"></nav>
         <div className="top-r">

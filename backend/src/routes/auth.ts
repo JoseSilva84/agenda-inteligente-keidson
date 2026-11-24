@@ -191,4 +191,37 @@ router.patch('/theme', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/auth/verify-password
+router.post('/verify-password', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const password = String(req.body.password || '');
+    if (!password) {
+      res.status(400).json({ error: 'Informe a senha do sistema.' });
+      return;
+    }
+
+    const usePg = await isPostgresConnected();
+    if (usePg) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+        res.status(401).json({ error: 'Senha incorreta. Tente novamente.' });
+        return;
+      }
+      res.json({ ok: true });
+      return;
+    }
+
+    const store = loadLocalStore();
+    const user = store.users.find((u) => u.id === userId);
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      res.status(401).json({ error: 'Senha incorreta. Tente novamente.' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Erro ao validar a senha.' });
+  }
+});
+
 export default router;

@@ -28,6 +28,8 @@ import {
   fromMin,
   ic,
   jsPDF,
+  noteToHtml,
+  noteToPlain,
   nowMin,
   pad,
   parse,
@@ -92,9 +94,9 @@ function detailTooltip(titleText: string, details: Array<[string, string]>, note
     box.appendChild(row);
   }
   if (notes) {
-    const note = document.createElement('p');
+    const note = document.createElement('div');
     note.className = 'activity-tooltip-note';
-    note.textContent = notes;
+    note.innerHTML = noteToHtml(notes);
     box.appendChild(note);
   }
   return box;
@@ -110,7 +112,7 @@ function tooltipContent(o: any) {
   ];
   if (o.rec) details.push(['Recorrência', 'Atividade recorrente']);
   if (o.isSub) details.push(['Atividade', o.item.title]);
-  return detailTooltip(o.isSub ? o.sub.text : occTitle(o), details, String(o.item.notes || '').trim());
+  return detailTooltip(o.isSub ? o.sub.text : occTitle(o), details, noteToPlain(o.item.notes) ? String(o.item.notes || '').trim() : '');
 }
 
 function tooltipForReference(reference: Element) {
@@ -888,7 +890,7 @@ function layoutDay(list: any[]) {
 }
 
 export function markIcons(it: any) {
-  const notes = !!String(it.notes || '').trim();
+  const notes = !!noteToPlain(it.notes);
   const subs = it.subtasks || [];
   const done = subs.filter((x: any) => x.done).length;
   const nf = (it.files || []).length;
@@ -939,8 +941,9 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   const es = run ? run.es : effStatus(o);
   const c = safeColor(cat(o.item.category).color);
   const days = run ? `${fmtDW(run.first)} a ${fmtDW(run.last)} · ` : '';
-  const hasNotes = !!String(o.item.notes || '').trim();
-  const noteSnippet = hasNotes ? String(o.item.notes || '').trim().split(/\r?\n/)[0].slice(0, 60) : '';
+  const plainNote = noteToPlain(o.item.notes);
+  const hasNotes = !!plainNote;
+  const noteSnippet = hasNotes ? plainNote.split(/\r?\n/)[0].slice(0, 60) : '';
   const quickNoteBtn = `<button type="button" class="ev-qnote-btn${hasNotes ? ' has-note' : ''}" data-qnote="${esc(
     o.key
   )}" title="${hasNotes ? 'Editar anotação rápida' : 'Adicionar anotação rápida'}" aria-label="Anotação rápida">${ic(
@@ -1138,7 +1141,7 @@ export function monthHTML() {
             )}" tabindex="0" role="button" style="--c:${safeColor(cat(o.item.category).color)}"><i></i><span class="chip-t">${esc(
               occTitle(o)
             )}</span>${o.isSub ? '' : markIcons(o.item)}<button type="button" class="chip-qnote-btn${
-              String(o.item.notes || '').trim() ? ' has-note' : ''
+              noteToPlain(o.item.notes) ? ' has-note' : ''
             }" data-qnote="${esc(o.key)}" title="Anotação rápida" aria-label="Anotação rápida">${ic('note', 11)}</button></div>`
         )
         .join('');

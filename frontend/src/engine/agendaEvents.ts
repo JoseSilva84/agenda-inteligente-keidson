@@ -56,6 +56,7 @@ import {
 } from './agendaRenderers';
 import {
   ask,
+  askPassword,
   blankItem,
   closeModal,
   copyOcc,
@@ -1293,6 +1294,11 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
         return;
       }
       if (act === 'wipe') {
+        const pwdOk = await askPassword(
+          'Confirmação de segurança',
+          'Para evitar exclusão acidental, digite a senha do sistema antes de prosseguir:'
+        );
+        if (!pwdOk) return;
         const v = await ask(
           'Apagar todas as atividades',
           `Isso apaga as ${S.items.size} atividades e seus anexos. Não dá para desfazer. Exporte uma cópia antes, se quiser guardar.`,

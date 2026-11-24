@@ -15,6 +15,8 @@ import {
   fmtH,
   fromMin,
   ic,
+  noteToHtml,
+  noteToPlain,
   nowMin,
   parse,
   plural,
@@ -45,6 +47,7 @@ import {
   travelText
 } from './agendaCore';
 import { FileStore, compressImage, renderPdf, toast } from './agendaStorage';
+import { verifyPasswordApi } from '../services/api';
 import {
   $,
   $$,
@@ -86,6 +89,81 @@ export function closeModal(w?: HTMLElement | null) {
   if (S.pendingRender) render();
 }
 
+export function richNotesFieldHTML(id: string, labelText: string, value: string, placeholder: string, ro?: boolean, extraStyle = '') {
+  const htmlVal = noteToHtml(value || '');
+  const toolbar = ro
+    ? ''
+    : `<div class="rte-toolbar" data-rte-for="${id}" role="toolbar" aria-label="Formatação de anotações">
+        <button type="button" class="rte-btn" data-rte-cmd="bold" title="Negrito (Ctrl+B)" aria-label="Negrito"><b>N</b></button>
+        <button type="button" class="rte-btn" data-rte-cmd="italic" title="Itálico (Ctrl+I)" aria-label="Itálico"><i>I</i></button>
+        <button type="button" class="rte-btn" data-rte-cmd="underline" title="Sublinhado (Ctrl+U)" aria-label="Sublinhado"><u>S</u></button>
+        <button type="button" class="rte-btn" data-rte-cmd="strikeThrough" title="Tachado / Riscado" aria-label="Tachado"><s>T</s></button>
+        <span class="rte-sep" aria-hidden="true"></span>
+        <button type="button" class="rte-btn" data-rte-cmd="insertOrderedList" title="Lista numerada (1. 2. 3.)" aria-label="Lista numerada">1.</button>
+        <button type="button" class="rte-btn" data-rte-cmd="insertUnorderedList" title="Lista com marcadores" aria-label="Lista com marcadores">•</button>
+        <span class="rte-sep" aria-hidden="true"></span>
+        <button type="button" class="rte-btn" data-rte-cmd="removeFormat" title="Limpar formatação" aria-label="Limpar formatação">Tx</button>
+      </div>`;
+  return `<div class="field rte-field" style="${extraStyle}">
+    <div class="rte-header">
+      <span class="rte-label">${labelText}</span>
+      ${toolbar}
+    </div>
+    <div
+      id="${id}"
+      class="rte-editor"
+      contenteditable="${ro ? 'false' : 'true'}"
+      role="textbox"
+      aria-multiline="true"
+      aria-label="${esc(noteToPlain(labelText))}"
+      data-placeholder="${esc(placeholder)}"
+    >${htmlVal}</div>
+  </div>`;
+}
+
+export function getRichNoteVal(el: HTMLElement | null): string {
+  if (!el) return '';
+  const html = el.innerHTML.trim();
+  const plain = (el.textContent || el.innerText || '').trim();
+  if (!plain && !/<(ul|ol|li)\b/i.test(html)) return '';
+  return html;
+}
+
+export function bindRichNotes(w: HTMLElement, onUpdate?: (id: string, val: string) => void) {
+  w.querySelectorAll<HTMLElement>('.rte-editor').forEach((ed) => {
+    const sync = () => {
+      const val = getRichNoteVal(ed);
+      ed.classList.toggle('is-empty', !val);
+      if (onUpdate) onUpdate(ed.id, val);
+    };
+    ed.classList.toggle('is-empty', !getRichNoteVal(ed));
+    ed.addEventListener('input', sync);
+    ed.addEventListener('blur', sync);
+  });
+
+  w.querySelectorAll<HTMLButtonElement>('[data-rte-cmd]').forEach((btn) => {
+    btn.addEventListener('mousedown', (e) => {
+      // Preserva a seleção de texto no editor ao clicar nos botões da barra
+      e.preventDefault();
+    });
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const cmd = btn.dataset.rteCmd!;
+      const bar = btn.closest('[data-rte-for]') as HTMLElement | null;
+      const targetId = bar?.dataset.rteFor;
+      const ed = targetId ? (w.querySelector('#' + targetId) as HTMLElement | null) : null;
+      if (!ed) return;
+      ed.focus();
+      try {
+        document.execCommand(cmd, false);
+      } catch {}
+      const val = getRichNoteVal(ed);
+      ed.classList.toggle('is-empty', !val);
+      if (onUpdate) onUpdate(ed.id, val);
+    });
+  });
+}
+
 export function ask(title: string, text: string, buttons: Array<{ label: string; value: any; kind?: string }>) {
   return new Promise<any>((res) => {
     let done = false;
@@ -112,6 +190,83 @@ export function ask(title: string, text: string, buttons: Array<{ label: string;
       }
     );
     return w;
+  });
+}
+
+export function askPassword(title: string, text: string): Promise<boolean> {
+  return new Promise<boolean>((res) => {
+    let done = false;
+    showModal(
+      `<form id="pwd-confirm-form" novalidate>
+        <div class="m-h">
+          <svg class="i" viewBox="0 0 24 24" style="width:20px;height:20px;color:var(--bad)">
+            <rect x="5" y="11" width="14" height="10" rx="2"/>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+          </svg>
+          <h2>${esc(title)}</h2>
+        </div>
+        <div class="m-b">
+          <p style="margin:0;color:var(--muted);font-size:14px">${esc(text)}</p>
+          <label class="field" for="pwd-confirm-inp">
+            <span>Senha do sistema</span>
+            <input
+              type="password"
+              id="pwd-confirm-inp"
+              placeholder="Digite sua senha de acesso"
+              autofocus
+              required
+              autocomplete="current-password"
+            >
+          </label>
+          <div class="err-msg" id="pwd-confirm-err" role="alert"></div>
+        </div>
+        <div class="m-f">
+          <span class="sp"></span>
+          <button type="button" class="btn" data-close>Cancelar</button>
+          <button type="submit" class="btn btn-danger" id="pwd-confirm-btn">Verificar senha</button>
+        </div>
+      </form>`,
+      (wEl) => {
+        const inp = $('#pwd-confirm-inp', wEl) as HTMLInputElement | null;
+        const errEl = $('#pwd-confirm-err', wEl) as HTMLElement | null;
+        const btnEl = $('#pwd-confirm-btn', wEl) as HTMLButtonElement | null;
+        setTimeout(() => inp?.focus(), 40);
+
+        $('#pwd-confirm-form', wEl).addEventListener('submit', async (e: Event) => {
+          e.preventDefault();
+          const pwd = inp?.value || '';
+          if (!pwd) {
+            if (errEl) errEl.textContent = 'Por favor, digite a senha do sistema.';
+            inp?.focus();
+            return;
+          }
+          if (errEl) errEl.textContent = '';
+          if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = 'Verificando…';
+          }
+          try {
+            await verifyPasswordApi(pwd);
+            done = true;
+            closeModal(wEl);
+            res(true);
+          } catch (err: any) {
+            if (errEl) errEl.textContent = err?.message || 'Senha incorreta.';
+            if (btnEl) {
+              btnEl.disabled = false;
+              btnEl.textContent = 'Verificar senha';
+            }
+            inp?.select();
+          }
+        });
+      },
+      {
+        cls: 'sm',
+        onClose: () => {
+          if (!done) res(false);
+        }
+      }
+    );
   });
 }
 
@@ -211,9 +366,7 @@ export function openTravel(id?: string | null, preset: any = {}) {
       <div class="form-grid"><label class="field" for="tr-d2">Retorno: dia<input type="date" id="tr-d2" value="${
         v.endDate
       }"></label><label class="field" for="tr-t2">Retorno: hora<input type="time" id="tr-t2" value="${v.end}" step="300"></label></div>
-      <label class="field" for="tr-notes">Anotações<textarea id="tr-notes" rows="3" placeholder="Voo, hotel, contatos…">${esc(
-        v.notes || ''
-      )}</textarea></label>
+      ${richNotesFieldHTML('tr-notes', 'Anotações', v.notes || '', 'Voo, hotel, contatos…', ro)}
       <div class="err-msg" id="tr-err" role="alert"></div>
     </div>
     <div class="m-f">${
@@ -222,6 +375,9 @@ export function openTravel(id?: string | null, preset: any = {}) {
       ro ? '' : `<button type="submit" class="btn btn-primary">${tr ? 'Salvar' : 'Sombrear período'}</button>`
     }</div></form>`,
     (w) => {
+      bindRichNotes(w, (id, val) => {
+        if (id === 'tr-notes') v.notes = val;
+      });
       w.addEventListener('click', async (e) => {
         const b = (e.target as HTMLElement).closest('button');
         if (!b) return;
@@ -229,7 +385,8 @@ export function openTravel(id?: string | null, preset: any = {}) {
           const p = {
             date: $('#tr-d1', w).value || v.date,
             start: $('#tr-t1', w).value || '09:00',
-            title: $('#tr-title', w).value
+            title: $('#tr-title', w).value,
+            notes: getRichNoteVal($('#tr-notes', w))
           };
           closeModal(w);
           openEditor(null, p);
@@ -239,7 +396,7 @@ export function openTravel(id?: string | null, preset: any = {}) {
             date: ($('#tr-d1', w) as HTMLInputElement)?.value || v.date,
             start: ($('#tr-t1', w) as HTMLInputElement)?.value || '09:00',
             title: ($('#tr-title', w) as HTMLInputElement)?.value,
-            notes: ($('#tr-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#tr-notes', w))
           };
           closeModal(w);
           openStudy(null, p);
@@ -249,7 +406,7 @@ export function openTravel(id?: string | null, preset: any = {}) {
             date: ($('#tr-d1', w) as HTMLInputElement)?.value || v.date,
             start: ($('#tr-t1', w) as HTMLInputElement)?.value || '08:00',
             title: ($('#tr-title', w) as HTMLInputElement)?.value,
-            notes: ($('#tr-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#tr-notes', w))
           };
           closeModal(w);
           openHoliday(null, p);
@@ -288,7 +445,7 @@ export function openTravel(id?: string | null, preset: any = {}) {
           start: t1,
           endDate: d2,
           end: t2,
-          notes: $('#tr-notes', w).value,
+          notes: getRichNoteVal($('#tr-notes', w)),
           kind: 'travel',
           updatedAt: Date.now()
         });
@@ -401,9 +558,14 @@ export function openStudy(id?: string | null, preset: any = {}) {
           </div>
         </div>
 
-        <label class="field" for="st-notes" style="margin-top:12px">Anotações do estudo / Resumo<textarea id="st-notes" rows="3" placeholder="Resumo do conteúdo, tópicos das 70 semanas, versículos, referências ou páginas para rever…">${esc(
-          v.notes || ''
-        )}</textarea></label>
+        ${richNotesFieldHTML(
+          'st-notes',
+          'Anotações do estudo / Resumo',
+          v.notes || '',
+          'Resumo do conteúdo, tópicos das 70 semanas, versículos, referências ou páginas para rever…',
+          false,
+          'margin-top:12px'
+        )}
         <div class="err-msg" id="st-err" role="alert"></div>
       </div>
       <div class="m-f">
@@ -413,6 +575,9 @@ export function openStudy(id?: string | null, preset: any = {}) {
       </div>
     </form>`,
     (w) => {
+      bindRichNotes(w, (id, val) => {
+        if (id === 'st-notes') v.notes = val;
+      });
       const updateRevList = () => {
         const box = $('#st-rev-list', w);
         if (box) box.innerHTML = renderRevRows();
@@ -477,7 +642,7 @@ export function openStudy(id?: string | null, preset: any = {}) {
             start: ($('#st-start', w) as HTMLInputElement)?.value || v.start,
             end: ($('#st-end', w) as HTMLInputElement)?.value || v.end,
             title: ($('#st-title', w) as HTMLInputElement)?.value,
-            notes: ($('#st-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#st-notes', w))
           };
           closeModal(w);
           openEditor(null, p);
@@ -486,7 +651,7 @@ export function openStudy(id?: string | null, preset: any = {}) {
             date: ($('#st-date', w) as HTMLInputElement)?.value || v.date,
             start: ($('#st-start', w) as HTMLInputElement)?.value || v.start,
             title: ($('#st-title', w) as HTMLInputElement)?.value,
-            notes: ($('#st-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#st-notes', w))
           };
           closeModal(w);
           openTravel(null, p);
@@ -496,7 +661,7 @@ export function openStudy(id?: string | null, preset: any = {}) {
             start: ($('#st-start', w) as HTMLInputElement)?.value || v.start,
             end: ($('#st-end', w) as HTMLInputElement)?.value || v.end,
             title: ($('#st-title', w) as HTMLInputElement)?.value,
-            notes: ($('#st-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#st-notes', w))
           };
           closeModal(w);
           openHoliday(null, p);
@@ -510,7 +675,7 @@ export function openStudy(id?: string | null, preset: any = {}) {
         const date = validY(($('#st-date', w) as HTMLInputElement).value);
         const start = validT(($('#st-start', w) as HTMLInputElement).value);
         const end = validT(($('#st-end', w) as HTMLInputElement).value);
-        const notes = ($('#st-notes', w) as HTMLTextAreaElement).value.trim();
+        const notes = getRichNoteVal($('#st-notes', w));
 
         if (!title) {
           err.textContent = 'Informe o tema ou assunto do estudo (ex: As 70 Semanas).';
@@ -661,9 +826,13 @@ export function openHoliday(id?: string | null, preset: any = {}) {
           </div>
         </div>
 
-        <label class="field" for="hol-notes">Observações / Anotações<textarea id="hol-notes" rows="3" placeholder="Detalhes do feriado, programação especial ou folga…">${esc(
-          v.notes
-        )}</textarea></label>
+        ${richNotesFieldHTML(
+          'hol-notes',
+          'Observações / Anotações',
+          v.notes || '',
+          'Detalhes do feriado, programação especial ou folga…',
+          false
+        )}
         <div class="err-msg" id="hol-err" role="alert"></div>
       </div>
       <div class="m-f">
@@ -673,6 +842,9 @@ export function openHoliday(id?: string | null, preset: any = {}) {
       </div>
     </form>`,
     (w) => {
+      bindRichNotes(w, (id, val) => {
+        if (id === 'hol-notes') v.notes = val;
+      });
       w.addEventListener('change', (e: Event) => {
         const t = e.target as HTMLInputElement;
         if (t.id === 'hol-date') {
@@ -697,7 +869,7 @@ export function openHoliday(id?: string | null, preset: any = {}) {
             start: ($('#hol-start', w) as HTMLInputElement)?.value || v.start,
             end: ($('#hol-end', w) as HTMLInputElement)?.value || v.end,
             title: ($('#hol-title', w) as HTMLInputElement)?.value,
-            notes: ($('#hol-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#hol-notes', w))
           };
           closeModal(w);
           openEditor(null, p);
@@ -707,7 +879,7 @@ export function openHoliday(id?: string | null, preset: any = {}) {
             start: ($('#hol-start', w) as HTMLInputElement)?.value || v.start,
             end: ($('#hol-end', w) as HTMLInputElement)?.value || v.end,
             title: ($('#hol-title', w) as HTMLInputElement)?.value,
-            notes: ($('#hol-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#hol-notes', w))
           };
           closeModal(w);
           openStudy(null, p);
@@ -716,7 +888,7 @@ export function openHoliday(id?: string | null, preset: any = {}) {
             date: ($('#hol-date', w) as HTMLInputElement)?.value || v.date,
             start: ($('#hol-start', w) as HTMLInputElement)?.value || v.start,
             title: ($('#hol-title', w) as HTMLInputElement)?.value,
-            notes: ($('#hol-notes', w) as HTMLTextAreaElement)?.value
+            notes: getRichNoteVal($('#hol-notes', w))
           };
           closeModal(w);
           openTravel(null, p);
@@ -731,7 +903,7 @@ export function openHoliday(id?: string | null, preset: any = {}) {
         const d2 = validY(($('#hol-end-date', w) as HTMLInputElement).value) || d1;
         const start = validT(($('#hol-start', w) as HTMLInputElement).value);
         const end = validT(($('#hol-end', w) as HTMLInputElement).value);
-        const notes = ($('#hol-notes', w) as HTMLTextAreaElement).value.trim();
+        const notes = getRichNoteVal($('#hol-notes', w));
 
         if (!title) {
           err.textContent = 'Informe o nome do feriado.';
@@ -811,17 +983,13 @@ export function openQuickNote(key?: string | null) {
         </div>
       </div>
       <div class="m-b">
-        <label class="field" for="qnote-txt">
-          <span>📝 Anotação rápida da atividade</span>
-          <textarea
-            id="qnote-txt"
-            rows="5"
-            placeholder="Digite uma anotação rápida, observação, telefone ou lembrete para esta atividade…"
-            autofocus
-            ${ro ? 'readonly' : ''}
-            style="font-size:15px;line-height:1.45"
-          >${esc(it.notes || '')}</textarea>
-        </label>
+        ${richNotesFieldHTML(
+          'qnote-txt',
+          '📝 Anotação rápida',
+          it.notes || '',
+          'Digite uma anotação rápida, observação, telefone ou lembrete para esta atividade…',
+          ro
+        )}
       </div>
       <div class="m-f">
         <button type="button" class="btn btn-sm" data-act="qnote-full">Abrir detalhes completos</button>
@@ -831,11 +999,11 @@ export function openQuickNote(key?: string | null) {
       </div>
     </form>`,
     (w) => {
-      const ta = $('#qnote-txt', w) as HTMLTextAreaElement | null;
-      if (ta) {
+      bindRichNotes(w);
+      const edEl = $('#qnote-txt', w) as HTMLElement | null;
+      if (edEl && !ro) {
         setTimeout(() => {
-          ta.focus();
-          ta.setSelectionRange(ta.value.length, ta.value.length);
+          edEl.focus();
         }, 40);
       }
 
@@ -843,7 +1011,7 @@ export function openQuickNote(key?: string | null) {
         const b = (e.target as HTMLElement).closest('button');
         if (!b) return;
         if (b.dataset.act === 'qnote-full') {
-          const curVal = ta ? ta.value : it.notes;
+          const curVal = edEl ? getRichNoteVal(edEl) : it.notes;
           if (!ro && curVal !== it.notes) {
             it.notes = curVal;
             putItem(it);
@@ -859,7 +1027,7 @@ export function openQuickNote(key?: string | null) {
           closeModal(w);
           return;
         }
-        const val = ta ? ta.value.trim() : '';
+        const val = edEl ? getRichNoteVal(edEl) : '';
         it.notes = val;
         it.history = [...(it.history || []), { at: Date.now(), text: val ? 'Anotação rápida atualizada' : 'Anotação removida' }].slice(-30);
         putItem(it);
@@ -1073,9 +1241,7 @@ function editorInner(ed: any) {
         ? ''
         : `<div class="addlink" style="grid-template-columns:1fr auto"><input class="inp" id="sub-new" placeholder="Nova subtarefa (Enter adiciona)" aria-label="Nova subtarefa"><button type="button" class="btn btn-sm" data-act="addsub">Adicionar</button></div>`
     }</div>
-    <label class="field" for="ed-notes">Anotações<textarea id="ed-notes" rows="3" placeholder="Pauta, detalhes, o que levar…">${esc(
-      d.notes
-    )}</textarea></label>
+    ${richNotesFieldHTML('ed-notes', 'Anotações', d.notes || '', 'Pauta, detalhes, o que levar…', ro)}
     <div class="sect"><h3>Arquivos e links</h3><div id="ed-att"></div>
       ${
         !ro
@@ -1213,6 +1379,9 @@ function normRecur(r: any, date: string) {
 function bindEditor(w: HTMLElement, ed: any) {
   const d = ed.d;
   const f = $('#edform', w);
+  bindRichNotes(w, (id, val) => {
+    if (id === 'ed-notes') d.notes = val;
+  });
   const refreshAtt = () => {
     $('#ed-att', w).innerHTML = attHTML(ed);
   };
@@ -1289,10 +1458,12 @@ function bindEditor(w: HTMLElement, ed: any) {
       } ${n ? '<button type="button" class="btn btn-sm" data-act="pick-clear">Limpar</button>' : ''}</p>`;
   };
   refreshPick();
-  const shareText = () =>
-    `Olá! Você tem uma atividade ${d.date === todayY() ? 'hoje' : 'em ' + fmtDW(d.date)}.\nAtividade: ${
+  const shareText = () => {
+    const plain = noteToPlain(d.notes);
+    return `Olá! Você tem uma atividade ${d.date === todayY() ? 'hoje' : 'em ' + fmtDW(d.date)}.\nAtividade: ${
       d.title || '(sem nome)'
-    }\nHorário: ${fmtH(d.start)} às ${fmtH(d.end)}${d.notes.trim() ? '\nAnotações: ' + d.notes.trim().slice(0, 300) : ''}`;
+    }\nHorário: ${fmtH(d.start)} às ${fmtH(d.end)}${plain ? '\nAnotações: ' + plain.slice(0, 300) : ''}`;
+  };
   const subText = (x: any) => {
     const i = d.subtasks.indexOf(x);
     return `Olá! Subtarefa ${i + 1}/${d.subtasks.length} da atividade “${d.title || '(sem nome)'}”.\nSubtarefa: ${x.text}${
@@ -1602,6 +1773,8 @@ function saveEditor(ed: any, w: HTMLElement) {
     closeModal(w);
     return;
   }
+  const edNotesEl = $('#ed-notes', w);
+  if (edNotesEl) d.notes = getRichNoteVal(edNotesEl);
   const wasRec = isRec(it);
   const hist: string[] = [];
   Object.assign(it, {
