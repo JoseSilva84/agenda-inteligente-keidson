@@ -142,7 +142,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
             <div>
               <div className="ai-modal-title">
                 <span>Assistente IA</span>
-                <span className="brand-accent-text" style={{ fontSize: '13px', marginLeft: '4px' }}>Agenda Inteligente</span>
+                <span className="brand-accent-text" style={{ fontSize: '13px', marginLeft: '4px' }}>AGENDA INTELIGENTE</span>
               </div>
               <div className="ai-modal-status">
                 <span className="ai-status-dot"></span>

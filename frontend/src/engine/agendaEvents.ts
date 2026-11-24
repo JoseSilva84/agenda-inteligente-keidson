@@ -62,6 +62,7 @@ import {
   copyText,
   openEditor,
   openPeopleDay,
+  openQuickNote,
   openResched,
   openStudy,
   openTravel,
@@ -135,6 +136,9 @@ function spanBox(d1: string, d2: string, lo: number, hi: number, label: string, 
 function startSel(e: PointerEvent) {
   const col = (e.target as HTMLElement).closest('.g-col') as HTMLElement | null;
   if (!col) return;
+  if (e.pointerType === 'touch' && S.touchLocked && !(S.pasteMode && S.clip)) {
+    return;
+  }
   if (S.readOnly) {
     toast('Esta agenda está disponível só para leitura.');
     return;
@@ -632,10 +636,13 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || e.ctrlKey) return;
     const t = e.target as HTMLElement;
-    if (t.closest('input, .quick, .trip-l')) return;
+    if (t.closest('input, .quick, .trip-l, [data-qnote]')) return;
     const el = t.closest('.ev, .chip') as HTMLElement | null;
     if (!el) {
       startSel(e);
+      return;
+    }
+    if (e.pointerType === 'touch' && S.touchLocked) {
       return;
     }
     const o = findOcc(el.dataset.key);
@@ -850,6 +857,13 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
       if (c.dataset.tab) setTab(c.dataset.tab);
       return;
     }
+    const qn = t.closest('[data-qnote]') as HTMLElement | null;
+    if (qn) {
+      e.preventDefault();
+      e.stopPropagation();
+      openQuickNote(qn.dataset.qnote);
+      return;
+    }
     if (t.closest('#notif-sub-readall')) {
       S.notifs = S.notifs.map((n: any) => ({ ...n, read: true }));
       Store.write('notifs');
@@ -980,6 +994,19 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
     const a = t.closest('[data-act]') as HTMLElement | null;
     if (a) {
       const act = a.dataset.act;
+      if (act === 'toggle-touch-lock') {
+        S.touchLocked = !S.touchLocked;
+        try {
+          localStorage.setItem(LSK + ':touchLock', S.touchLocked ? '1' : '0');
+        } catch {}
+        render();
+        toast(
+          S.touchLocked
+            ? '🔒 Tela bloqueada: movimente com os dedos livremente sem editar ou mover atividades.'
+            : '🔓 Tela desbloqueada: toque em uma atividade ou horário para digitar e editar.'
+        );
+        return;
+      }
       if (act === 'toggle-multi') {
         S.multiSelectMode = !S.multiSelectMode;
         if (!S.multiSelectMode) {
@@ -1285,6 +1312,8 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
     if (Date.now() - S.suppressClick < 350) return;
     const cell = t.closest('.m-cell') as HTMLElement | null;
     if (cell && !t.closest('.chip')) {
+      const isTouchDevice = window.innerWidth <= 900 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      if (isTouchDevice && S.touchLocked) return;
       openEditor(null, { date: cell.dataset.date, start: '09:00', end: '10:00' });
     }
   });

@@ -150,8 +150,8 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
             </svg>
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span>Agenda</span>
-            <span className="brand-accent-text">Inteligente</span>
+            <span>AGENDA</span>
+            <span className="brand-accent-text">INTELIGENTE</span>
             <span className="brand-pro-badge">PRO</span>
           </div>
         </div>

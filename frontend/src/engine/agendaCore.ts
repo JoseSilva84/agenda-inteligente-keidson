@@ -56,6 +56,16 @@ export const S: any = {
       return false;
     }
   })(),
+  touchLocked: (() => {
+    try {
+      const saved = localStorage.getItem(LSK + ':touchLock');
+      if (saved === '1' || saved === '0') return saved === '1';
+    } catch {}
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 900 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    }
+    return false;
+  })(),
   clip: null as any,
   pasteMode: false,
   lastTap: null as any,

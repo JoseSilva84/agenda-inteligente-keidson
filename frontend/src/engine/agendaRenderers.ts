@@ -658,6 +658,7 @@ export function render() {
   updateHeader();
   renderBanner();
   document.body.classList.toggle('pasting', !!(S.pasteMode && S.clip));
+  document.body.classList.toggle('touch-locked', !!S.touchLocked);
   const sc = m.querySelector('.g-scroll');
   if (sc) S.scroll = sc.scrollTop;
   m.innerHTML =
@@ -760,11 +761,20 @@ export function toolbarHTML() {
           S.pasteMode ? 'Clique numa linha para colar · Esc encerra' : 'Colar'
         }</button><button class="x" data-act="clipclear" aria-label="Esquecer a cópia">✕</button></span>`
       : '';
+  const lockBtn = `<button type="button" class="btn btn-sm touch-lock-btn ${
+    S.touchLocked ? 'is-locked' : 'is-unlocked'
+  }" data-act="toggle-touch-lock" aria-pressed="${!!S.touchLocked}" title="${
+    S.touchLocked
+      ? 'Tela bloqueada para rolar com os dedos sem mover ou editar atividades. Toque para desbloquear e digitar/editar.'
+      : 'Tela desbloqueada para digitar, mover e editar atividades. Toque para bloquear a rolagem.'
+  }">${ic(S.touchLocked ? 'lock' : 'unlock', 15)}<span class="lock-lbl">${
+    S.touchLocked ? 'Tela bloqueada' : 'Desbloqueada'
+  }</span></button>`;
   return `<div class="toolbar"><button class="side-tg" data-act="side" aria-pressed="${!S.sideHidden}" aria-label="${
     S.sideHidden ? 'Mostrar calendário' : 'Ocultar calendário'
   }" title="${
     S.sideHidden ? 'Mostrar calendário' : 'Ocultar calendário'
-  }"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16"/></svg></button>${nav}<h2>${rangeLabel()}</h2><div class="tb-r">${hint}<div class="seg" role="group" aria-label="Visualização">${
+  }"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16"/></svg></button>${nav}${lockBtn}<h2>${rangeLabel()}</h2><div class="tb-r">${hint}<div class="seg" role="group" aria-label="Visualização">${
     S.view === 'custom'
       ? `<button class="active" data-view="week" title="Voltar para a semana">${S.customDays?.length || 0} dias ✕</button>`
       : ''
@@ -929,6 +939,18 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   const es = run ? run.es : effStatus(o);
   const c = safeColor(cat(o.item.category).color);
   const days = run ? `${fmtDW(run.first)} a ${fmtDW(run.last)} · ` : '';
+  const hasNotes = !!String(o.item.notes || '').trim();
+  const noteSnippet = hasNotes ? String(o.item.notes || '').trim().split(/\r?\n/)[0].slice(0, 60) : '';
+  const quickNoteBtn = `<button type="button" class="ev-qnote-btn${hasNotes ? ' has-note' : ''}" data-qnote="${esc(
+    o.key
+  )}" title="${hasNotes ? 'Editar anotação rápida' : 'Adicionar anotação rápida'}" aria-label="Anotação rápida">${ic(
+    'note',
+    12
+  )}</button>`;
+  const notePreviewHtml =
+    hasNotes && !short && h >= 44
+      ? `<div class="ev-note-preview" data-qnote="${esc(o.key)}">${esc(noteSnippet)}</div>`
+      : '';
   return `<div class="ev st-${es}${short ? ' short' : ''}" ${tooltipAttr(run ? { ...o, displayRange: [run.first, run.last] } : o)} data-key="${esc(o.key)}"${
     run ? ` data-span="1" data-first="${run.first}" data-last="${run.last}"` : ''
   } tabindex="0" role="button" aria-label="${esc(o.item.title)}, ${days}${fmtH(o.start)} a ${fmtH(o.end)}, ${
@@ -936,7 +958,7 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   }" style="--c:${c};top:${top}px;height:${h}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px)">
     <div class="ev-top"><div class="ev-t">${
       conflict ? '<span class="warnmark" title="Conflito de horário">!</span>' : ''
-    }${esc(o.item.title)}</div></div>
+    }${esc(o.item.title)}</div>${quickNoteBtn}</div>${notePreviewHtml}
     <span class="rz" aria-hidden="true"></span><span class="rzx" aria-hidden="true" title="Arraste para os lados para ocupar outros dias"></span></div>`;
 }
 
@@ -1113,9 +1135,11 @@ export function monthHTML() {
           (o) =>
             `<div class="chip st-${effStatus(o)}" ${tooltipAttr(o)} data-key="${esc(
               o.key
-            )}" tabindex="0" role="button" style="--c:${safeColor(cat(o.item.category).color)}"><i></i>${esc(
+            )}" tabindex="0" role="button" style="--c:${safeColor(cat(o.item.category).color)}"><i></i><span class="chip-t">${esc(
               occTitle(o)
-            )}${o.isSub ? '' : markIcons(o.item)}</div>`
+            )}</span>${o.isSub ? '' : markIcons(o.item)}<button type="button" class="chip-qnote-btn${
+              String(o.item.notes || '').trim() ? ' has-note' : ''
+            }" data-qnote="${esc(o.key)}" title="Anotação rápida" aria-label="Anotação rápida">${ic('note', 11)}</button></div>`
         )
         .join('');
       const tsegs = travelSegs(d);

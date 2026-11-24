@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS = () => ({
     { id: 'saude', name: 'Saúde', color: '#0E9F6E' },
     { id: 'pessoal', name: 'Pessoal', color: '#E8811A' },
     { id: 'reunioes', name: 'Reuniões', color: '#DB3F78' },
+    { id: 'feriado', name: 'Feriado', color: '#E11D48' },
     { id: 'aniversariantes', name: 'Aniversariantes', color: '#E0A100' },
     { id: 'diasprof', name: 'Dias profissionais', color: '#0F8C8C' }
   ]
@@ -55,8 +56,8 @@ export function normSettings(s: any) {
       ...cats.filter((c: any) => !d.categories.some((base) => base.id === c.id))
     ];
   }
-  if (!s?.specialCats) {
-    for (const k of d.categories.filter((c) => c.id === 'aniversariantes' || c.id === 'diasprof')) {
+  if (!s?.specialCats || !cats.some((c: any) => c.id === 'feriado')) {
+    for (const k of d.categories.filter((c) => c.id === 'aniversariantes' || c.id === 'diasprof' || c.id === 'feriado')) {
       if (!cats.some((c: any) => c.id === k.id)) cats = [...cats, k];
     }
   }

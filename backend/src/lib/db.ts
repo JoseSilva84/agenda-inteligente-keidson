@@ -9,6 +9,7 @@ export const DEFAULT_CATEGORIES = [
   { id: 'saude', name: 'Saúde', color: '#0E9F6E' },
   { id: 'pessoal', name: 'Pessoal', color: '#E8811A' },
   { id: 'reunioes', name: 'Reuniões', color: '#DB3F78' },
+  { id: 'feriado', name: 'Feriado', color: '#E11D48' },
   { id: 'aniversariantes', name: 'Aniversariantes', color: '#E0A100' },
   { id: 'diasprof', name: 'Dias profissionais', color: '#0F8C8C' }
 ];

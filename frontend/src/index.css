@@ -234,6 +234,71 @@ body {
   z-index: 2;
   padding: 8px 0;
 }
+.login-install-btn:hover {
+  border-color: var(--accent) !important;
+  background: var(--soft) !important;
+}
+.login-install-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 13, 25, 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.login-install-modal {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border-radius: 22px;
+  padding: 22px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.login-install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.login-install-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.login-install-step .step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.login-install-step b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.login-install-step small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
 
 /* Apple macOS / iOS custom scrollbar */
 ::-webkit-scrollbar {
@@ -1232,12 +1297,17 @@ svg.i {
   min-width: 45%;
 }
 .ev:not(.subev) .ev-top {
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   width: 100%;
 }
 .ev:not(.subev) .ev-top .ev-t {
-  text-align: center;
-  flex: 1 1 100%;
+  text-align: left;
+  flex: 1 1 auto;
+}
+.ev.short:not(.subev) {
+  align-items: flex-start;
+  padding-top: 2px;
 }
 .ev.short:not(.subev) .ev-top {
   flex: 1 1 100%;
@@ -1478,6 +1548,86 @@ body.pasting .clipchip {
 }
 .ev:hover .rzx {
   background: linear-gradient(90deg, transparent 3px, color-mix(in srgb, var(--c) 70%, transparent) 3px 5px, transparent 5px);
+}
+/* Mobile Touch Lock & Quick Note on Activity Cell */
+body.touch-locked .ev,
+body.touch-locked .chip {
+  touch-action: pan-x pan-y;
+}
+body.touch-locked .ev .rz,
+body.touch-locked .ev .rzx {
+  display: none;
+}
+.touch-lock-btn {
+  gap: 5px;
+  transition: all 0.16s ease;
+}
+.touch-lock-btn.is-locked {
+  background: color-mix(in srgb, var(--warn) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+  color: var(--warn);
+}
+.touch-lock-btn.is-unlocked {
+  background: color-mix(in srgb, var(--ok) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+  color: var(--ok);
+}
+.ev-qnote-btn,
+.chip-qnote-btn {
+  border: 0;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--ink);
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 5px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  flex: none;
+  opacity: 0.72;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  z-index: 4;
+}
+.ev-qnote-btn:hover,
+.chip-qnote-btn:hover,
+.ev-qnote-btn.has-note,
+.chip-qnote-btn.has-note {
+  opacity: 1;
+  background: color-mix(in srgb, var(--c) 45%, var(--surface));
+}
+.ev-qnote-btn:active,
+.chip-qnote-btn:active {
+  transform: scale(0.92);
+}
+.ev-note-preview {
+  margin-top: 2px;
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--ink);
+  opacity: 0.84;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.chip .chip-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 900px), (pointer: coarse) {
+  .ev-qnote-btn {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    opacity: 0.92;
+  }
 }
 .selbox.ghostspan {
   border-style: dashed;

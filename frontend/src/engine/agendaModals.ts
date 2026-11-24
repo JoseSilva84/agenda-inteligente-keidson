@@ -201,7 +201,7 @@ export function openTravel(id?: string | null, preset: any = {}) {
     <div class="m-b">
       ${
         !tr
-          ? `<div class="seg kind-seg" role="group"><button type="button" data-act="to-activity" aria-pressed="false">Atividade</button><button type="button" data-act="to-study" aria-pressed="false">Estudos</button><button type="button" aria-pressed="true">Viagem</button></div>`
+          ? `<div class="seg kind-seg" role="group"><button type="button" data-act="to-activity" aria-pressed="false">Atividade</button><button type="button" data-act="to-study" aria-pressed="false">Estudos</button><button type="button" aria-pressed="true">Viagem</button><button type="button" data-act="to-holiday" aria-pressed="false">Feriado</button></div>`
           : ''
       }
       <p class="note" style="margin:0">O período fica sombreado na agenda, do momento da saída até a volta. Você continua podendo marcar atividades por cima.</p>
@@ -243,6 +243,16 @@ export function openTravel(id?: string | null, preset: any = {}) {
           };
           closeModal(w);
           openStudy(null, p);
+        }
+        if (b.dataset.act === 'to-holiday') {
+          const p = {
+            date: ($('#tr-d1', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#tr-t1', w) as HTMLInputElement)?.value || '08:00',
+            title: ($('#tr-title', w) as HTMLInputElement)?.value,
+            notes: ($('#tr-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openHoliday(null, p);
         }
         if (b.dataset.act === 'tr-del') {
           const ok = await ask('Apagar viagem', `Apagar a viagem “${v.title || 'Viagem'}” e tirar o sombreamento?`, [
@@ -351,6 +361,7 @@ export function openStudy(id?: string | null, preset: any = {}) {
           <button type="button" data-act="to-activity" aria-pressed="false">Atividade</button>
           <button type="button" aria-pressed="true">Estudos</button>
           <button type="button" data-act="to-travel" aria-pressed="false">Viagem</button>
+          <button type="button" data-act="to-holiday" aria-pressed="false">Feriado</button>
         </div>
         <p class="note" style="margin:0">Cadastre a sessão de estudos. A agenda calculará e agendará automaticamente todas as <b>sessões de revisão espaçada</b> para fixação definitiva na memória.</p>
         
@@ -479,6 +490,16 @@ export function openStudy(id?: string | null, preset: any = {}) {
           };
           closeModal(w);
           openTravel(null, p);
+        } else if (b.dataset.act === 'to-holiday') {
+          const p = {
+            date: ($('#st-date', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#st-start', w) as HTMLInputElement)?.value || v.start,
+            end: ($('#st-end', w) as HTMLInputElement)?.value || v.end,
+            title: ($('#st-title', w) as HTMLInputElement)?.value,
+            notes: ($('#st-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openHoliday(null, p);
         }
       });
 
@@ -582,6 +603,272 @@ export function openStudy(id?: string | null, preset: any = {}) {
         toast(`Estudo "${title}" e ${activeRev.length} revisões agendadas com sucesso!`);
       });
     }
+  );
+}
+
+export function openHoliday(id?: string | null, preset: any = {}) {
+  if (S.readOnly) {
+    toast('Esta agenda está disponível só para leitura.');
+    return;
+  }
+  const existing = id ? S.items.get(id) : null;
+  const v = {
+    title: existing ? existing.title.replace(/^Feriado:\s*/i, '') : preset.title || '',
+    date: existing ? existing.date : preset.date || todayY(),
+    endDate: existing && existing.recur?.until ? existing.recur.until : preset.endDate || preset.date || todayY(),
+    start: existing ? existing.start : preset.start || '08:00',
+    end: existing ? existing.end : preset.end || '18:00',
+    holidayType: 'Nacional',
+    notes: existing ? existing.notes || '' : preset.notes || ''
+  };
+
+  showModal(
+    `<form id="holidayform" novalidate>
+      <div class="m-h">
+        <span class="dot" style="--c:#E11D48;width:14px;height:14px"></span>
+        <input class="title" id="hol-title" placeholder="Nome do feriado (ex: Natal, Sexta-feira Santa, Tiradentes…)" value="${esc(
+          v.title
+        )}" autofocus aria-label="Nome do feriado">
+      </div>
+      <div class="m-b">
+        ${
+          !existing
+            ? `<div class="seg kind-seg" role="group">
+                <button type="button" data-act="to-activity" aria-pressed="false">Atividade</button>
+                <button type="button" data-act="to-study" aria-pressed="false">Estudos</button>
+                <button type="button" data-act="to-travel" aria-pressed="false">Viagem</button>
+                <button type="button" aria-pressed="true">Feriado</button>
+              </div>`
+            : ''
+        }
+        <p class="note" style="margin:0">Cadastre um <b>Feriado</b> ou recesso na agenda. Ele ficará destacado na categoria Feriado durante o horário ou período escolhido.</p>
+
+        <div class="form-grid">
+          <label class="field" for="hol-date">Data de início<input type="date" id="hol-date" value="${v.date}" required></label>
+          <label class="field" for="hol-end-date">Data final (se for feriado prolongado)<input type="date" id="hol-end-date" value="${v.endDate}" required></label>
+        </div>
+
+        <div class="form-grid">
+          <label class="field" for="hol-start">Início no calendário<input type="time" id="hol-start" value="${v.start}" step="300"></label>
+          <label class="field" for="hol-end">Fim no calendário<input type="time" id="hol-end" value="${v.end}" step="300"></label>
+        </div>
+
+        <div class="field">Tipo de Feriado
+          <div class="seg" role="group" id="hol-type-seg">
+            <button type="button" data-hol-type="Nacional" aria-pressed="true">Nacional</button>
+            <button type="button" data-hol-type="Estadual / Municipal" aria-pressed="false">Estadual / Municipal</button>
+            <button type="button" data-hol-type="Ponto Facultativo / Recesso" aria-pressed="false">Recesso / Facultativo</button>
+          </div>
+        </div>
+
+        <label class="field" for="hol-notes">Observações / Anotações<textarea id="hol-notes" rows="3" placeholder="Detalhes do feriado, programação especial ou folga…">${esc(
+          v.notes
+        )}</textarea></label>
+        <div class="err-msg" id="hol-err" role="alert"></div>
+      </div>
+      <div class="m-f">
+        <span class="sp"></span>
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#E11D48;border-color:#BE123C;color:#fff">Salvar Feriado</button>
+      </div>
+    </form>`,
+    (w) => {
+      w.addEventListener('change', (e: Event) => {
+        const t = e.target as HTMLInputElement;
+        if (t.id === 'hol-date') {
+          const endDateEl = $('#hol-end-date', w) as HTMLInputElement | null;
+          if (endDateEl && (!endDateEl.value || endDateEl.value < t.value)) {
+            endDateEl.value = t.value;
+          }
+        }
+      });
+
+      w.addEventListener('click', (e: MouseEvent) => {
+        const b = (e.target as HTMLElement).closest('button');
+        if (!b) return;
+        if (b.dataset.holType) {
+          v.holidayType = b.dataset.holType;
+          $$('[data-hol-type]', w).forEach((btn) => btn.setAttribute('aria-pressed', String(btn === b)));
+          return;
+        }
+        if (b.dataset.act === 'to-activity') {
+          const p = {
+            date: ($('#hol-date', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#hol-start', w) as HTMLInputElement)?.value || v.start,
+            end: ($('#hol-end', w) as HTMLInputElement)?.value || v.end,
+            title: ($('#hol-title', w) as HTMLInputElement)?.value,
+            notes: ($('#hol-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openEditor(null, p);
+        } else if (b.dataset.act === 'to-study') {
+          const p = {
+            date: ($('#hol-date', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#hol-start', w) as HTMLInputElement)?.value || v.start,
+            end: ($('#hol-end', w) as HTMLInputElement)?.value || v.end,
+            title: ($('#hol-title', w) as HTMLInputElement)?.value,
+            notes: ($('#hol-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openStudy(null, p);
+        } else if (b.dataset.act === 'to-travel') {
+          const p = {
+            date: ($('#hol-date', w) as HTMLInputElement)?.value || v.date,
+            start: ($('#hol-start', w) as HTMLInputElement)?.value || v.start,
+            title: ($('#hol-title', w) as HTMLInputElement)?.value,
+            notes: ($('#hol-notes', w) as HTMLTextAreaElement)?.value
+          };
+          closeModal(w);
+          openTravel(null, p);
+        }
+      });
+
+      $('#holidayform', w).addEventListener('submit', (e: Event) => {
+        e.preventDefault();
+        const err = $('#hol-err', w);
+        const title = ($('#hol-title', w) as HTMLInputElement).value.trim();
+        const d1 = validY(($('#hol-date', w) as HTMLInputElement).value);
+        const d2 = validY(($('#hol-end-date', w) as HTMLInputElement).value) || d1;
+        const start = validT(($('#hol-start', w) as HTMLInputElement).value);
+        const end = validT(($('#hol-end', w) as HTMLInputElement).value);
+        const notes = ($('#hol-notes', w) as HTMLTextAreaElement).value.trim();
+
+        if (!title) {
+          err.textContent = 'Informe o nome do feriado.';
+          $('#hol-title', w).focus();
+          return;
+        }
+        if (!d1 || !d2 || !start || !end) {
+          err.textContent = 'Preencha as datas e os horários do feriado.';
+          return;
+        }
+        if (d2 < d1) {
+          err.textContent = 'A data final precisa ser igual ou posterior à data de início.';
+          return;
+        }
+        if (toMin(end) <= toMin(start)) {
+          err.textContent = 'O horário de fim precisa ser posterior ao de início.';
+          return;
+        }
+
+        const cleanTitle = /^feriado/i.test(title) ? title : `Feriado: ${title}`;
+        const multi = d2 > d1;
+        const item = {
+          id: existing ? existing.id : 'h_' + uid(),
+          kind: 'activity',
+          title: cleanTitle,
+          date: d1,
+          start,
+          end,
+          category: 'feriado',
+          priority: 'media',
+          status: 'planejada',
+          notes: [`📅 Feriado (${v.holidayType})`, notes].filter(Boolean).join('\n'),
+          recur: multi ? { freq: 'daily', days: [], until: d2 } : { freq: 'none' },
+          span: multi,
+          reminder: 0,
+          fixed: true,
+          deadline: d2,
+          autoResched: false,
+          subtasks: [],
+          links: [],
+          files: [],
+          overrides: {},
+          createdAt: existing ? existing.createdAt : Date.now(),
+          history: [
+            {
+              at: Date.now(),
+              text: multi ? `Feriado agendado de ${fmtDW(d1)} a ${fmtDW(d2)}` : `Feriado agendado em ${fmtDW(d1)}`
+            }
+          ]
+        };
+
+        putItem(item);
+        closeModal(w);
+        render();
+        toast(`“${cleanTitle}” salvo na agenda!`);
+      });
+    }
+  );
+}
+
+export function openQuickNote(key?: string | null) {
+  if (!key) return;
+  const o = findOcc(key);
+  if (!o) return;
+  const it = clone(S.items.get(o.id));
+  if (!it) return;
+  const ro = S.readOnly;
+  const c = safeColor(cat(it.category).color);
+
+  showModal(
+    `<form id="qnoteform" novalidate>
+      <div class="m-h">
+        <span class="dot" style="--c:${c};width:14px;height:14px"></span>
+        <div style="flex:1;min-width:0">
+          <h2 style="font-size:17px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.title)}</h2>
+          <span class="muted small num">${fmtDL(o.date)} · ${fmtH(o.start)}–${fmtH(o.end)}</span>
+        </div>
+      </div>
+      <div class="m-b">
+        <label class="field" for="qnote-txt">
+          <span>📝 Anotação rápida da atividade</span>
+          <textarea
+            id="qnote-txt"
+            rows="5"
+            placeholder="Digite uma anotação rápida, observação, telefone ou lembrete para esta atividade…"
+            autofocus
+            ${ro ? 'readonly' : ''}
+            style="font-size:15px;line-height:1.45"
+          >${esc(it.notes || '')}</textarea>
+        </label>
+      </div>
+      <div class="m-f">
+        <button type="button" class="btn btn-sm" data-act="qnote-full">Abrir detalhes completos</button>
+        <span class="sp"></span>
+        <button type="button" class="btn" data-close>Cancelar</button>
+        ${ro ? '' : '<button type="submit" class="btn btn-primary">Salvar anotação</button>'}
+      </div>
+    </form>`,
+    (w) => {
+      const ta = $('#qnote-txt', w) as HTMLTextAreaElement | null;
+      if (ta) {
+        setTimeout(() => {
+          ta.focus();
+          ta.setSelectionRange(ta.value.length, ta.value.length);
+        }, 40);
+      }
+
+      w.addEventListener('click', (e: MouseEvent) => {
+        const b = (e.target as HTMLElement).closest('button');
+        if (!b) return;
+        if (b.dataset.act === 'qnote-full') {
+          const curVal = ta ? ta.value : it.notes;
+          if (!ro && curVal !== it.notes) {
+            it.notes = curVal;
+            putItem(it);
+          }
+          closeModal(w);
+          openEditor(o.key);
+        }
+      });
+
+      $('#qnoteform', w).addEventListener('submit', (e: Event) => {
+        e.preventDefault();
+        if (ro) {
+          closeModal(w);
+          return;
+        }
+        const val = ta ? ta.value.trim() : '';
+        it.notes = val;
+        it.history = [...(it.history || []), { at: Date.now(), text: val ? 'Anotação rápida atualizada' : 'Anotação removida' }].slice(-30);
+        putItem(it);
+        closeModal(w);
+        render();
+        toast(val ? 'Anotação rápida salva!' : 'Anotação removida.');
+      });
+    },
+    { cls: 'sm' }
   );
 }
 
@@ -703,7 +990,7 @@ function editorInner(ed: any) {
   <div class="m-b">
     ${
       isNew
-        ? `<div class="seg kind-seg" role="group"><button type="button" aria-pressed="true">Atividade</button><button type="button" data-act="to-study" aria-pressed="false">Estudos</button><button type="button" data-act="to-travel" aria-pressed="false">Viagem</button></div>`
+        ? `<div class="seg kind-seg" role="group"><button type="button" aria-pressed="true">Atividade</button><button type="button" data-act="to-study" aria-pressed="false">Estudos</button><button type="button" data-act="to-travel" aria-pressed="false">Viagem</button><button type="button" data-act="to-holiday" aria-pressed="false">Feriado</button></div>`
         : ''
     }
     ${
@@ -1221,6 +1508,10 @@ function bindEditor(w: HTMLElement, ed: any) {
       const p = { date: d.date, start: d.start, title: d.title };
       closeModal(w);
       openTravel(null, p);
+    } else if (b.dataset.act === 'to-holiday') {
+      const p = { date: d.date, start: d.start, end: d.end, title: d.title, notes: d.notes };
+      closeModal(w);
+      openHoliday(null, p);
     } else if (b.dataset.act === 'copy-ed') {
       const o = findOcc(ed.o.key);
       if (o) {

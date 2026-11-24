@@ -29,6 +29,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [avatarSrc, setAvatarSrc] = useState(getPastorAvatar());
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [installTab, setInstallTab] = useState<'iphone' | 'ipad' | 'mac'>('iphone');
+
+  useEffect(() => {
+    const ua = navigator.userAgent || '';
+    if (/iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+      setInstallTab('ipad');
+    } else if (/Macintosh|Mac OS X/i.test(ua) && navigator.maxTouchPoints <= 1) {
+      setInstallTab('mac');
+    } else {
+      setInstallTab('iphone');
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        toast.success('Aplicativo instalado com sucesso!');
+        setDeferredPrompt(null);
+        return;
+      }
+    }
+    setShowInstallModal(true);
+  };
 
   useEffect(() => {
     const handleAvatarChanged = (e: any) => {
@@ -101,15 +135,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               className="login-brand-agenda"
               style={{
                 color: effectiveDark ? '#ffffff' : '#0f172a',
-                fontSize: '26px',
+                fontSize: '24px',
                 fontWeight: 800,
-                letterSpacing: '-0.025em'
+                letterSpacing: '-0.02em'
               }}
             >
-              Smart
+              AGENDA
             </span>
-            <span className="brand-accent-text" style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.025em' }}>
-              Vida
+            <span className="brand-accent-text" style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+              INTELIGENTE
             </span>
           </div>
         </div>
@@ -323,12 +357,224 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </motion.button>
           </form>
 
+          {/* Botão Baixar Aplicativo (Apple Ecosystem: MacBook, iPad e iPhone) */}
+          <div style={{ marginTop: '14px' }}>
+            <button
+              type="button"
+              onClick={handleInstallApp}
+              className="btn login-install-btn"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                height: '44px',
+                fontSize: '14px',
+                fontWeight: 600,
+                borderRadius: '13px',
+                gap: '9px',
+                background: effectiveDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.04)',
+                border: '1px solid var(--line)',
+                color: 'var(--ink)'
+              }}
+            >
+              <svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: 'currentColor', flexShrink: 0 }} aria-hidden="true">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.96 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z" />
+              </svg>
+              <span>Baixar Aplicativo</span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  padding: '2px 7px',
+                  borderRadius: '6px',
+                  background: 'var(--soft)',
+                  color: 'var(--accent)',
+                  fontWeight: 700
+                }}
+              >
+                Mac · iPad · iPhone
+              </span>
+            </button>
+          </div>
+
           {/* Apple Devices Footer Badge */}
           <div className="login-device-note" style={{ color: 'var(--muted)' }}>
-            <span>MacBook · iPhone · iPad</span>
+            <span>Ecossistema Apple · MacBook · iPad · iPhone</span>
           </div>
         </motion.div>
       </main>
+
+      {/* Modal Guia de Instalação Apple (MacBook, iPad e iPhone) */}
+      {showInstallModal && (
+        <div
+          className="login-install-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowInstallModal(false);
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="card login-install-modal"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    background: 'linear-gradient(135deg, #2A4CDB 0%, #7C3AED 100%)',
+                    color: '#fff',
+                    display: 'grid',
+                    placeItems: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" style={{ width: 20, height: 20, fill: 'currentColor' }}>
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.96 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.08-.52 2.72-1.3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Baixar Aplicativo Apple</h2>
+                  <p style={{ fontSize: '12.5px', color: 'var(--muted)', margin: 0 }}>
+                    Instale a AGENDA INTELIGENTE no seu dispositivo
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="iconbtn"
+                onClick={() => setShowInstallModal(false)}
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="seg" role="group" style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '14px' }}>
+              <button
+                type="button"
+                aria-pressed={installTab === 'iphone'}
+                onClick={() => setInstallTab('iphone')}
+              >
+                📱 iPhone
+              </button>
+              <button
+                type="button"
+                aria-pressed={installTab === 'ipad'}
+                onClick={() => setInstallTab('ipad')}
+              >
+                📲 iPad
+              </button>
+              <button
+                type="button"
+                aria-pressed={installTab === 'mac'}
+                onClick={() => setInstallTab('mac')}
+              >
+                💻 MacBook
+              </button>
+            </div>
+
+            {installTab === 'iphone' && (
+              <div className="login-install-steps">
+                <p style={{ margin: '0 0 10px', fontSize: '13.5px', color: 'var(--muted)' }}>
+                  Para instalar como aplicativo nativo no seu <b>iPhone (iOS)</b> pelo Safari:
+                </p>
+                <div className="login-install-step">
+                  <span className="step-num">1</span>
+                  <div>
+                    <b>Toque em Compartilhar</b>
+                    <small>Na barra inferior do Safari, toque no ícone de compartilhar (quadrado com seta para cima).</small>
+                  </div>
+                </div>
+                <div className="login-install-step">
+                  <span className="step-num">2</span>
+                  <div>
+                    <b>Adicionar à Tela de Início</b>
+                    <small>Role a lista de opções para baixo e escolha <b>“Adicionar à Tela de Início”</b>.</small>
+                  </div>
+                </div>
+                <div className="login-install-step">
+                  <span className="step-num">3</span>
+                  <div>
+                    <b>Confirme em Adicionar</b>
+                    <small>Toque em <b>“Adicionar”</b> no canto superior direito. O ícone aparecerá junto aos seus apps!</small>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {installTab === 'ipad' && (
+              <div className="login-install-steps">
+                <p style={{ margin: '0 0 10px', fontSize: '13.5px', color: 'var(--muted)' }}>
+                  Para instalar no seu <b>iPad (iPadOS)</b> em tela cheia pelo Safari:
+                </p>
+                <div className="login-install-step">
+                  <span className="step-num">1</span>
+                  <div>
+                    <b>Toque em Compartilhar</b>
+                    <small>No topo direito do Safari (ao lado da barra de endereço), toque no ícone de Compartilhar.</small>
+                  </div>
+                </div>
+                <div className="login-install-step">
+                  <span className="step-num">2</span>
+                  <div>
+                    <b>Adicionar à Tela de Início</b>
+                    <small>No menu suspenso, selecione a opção <b>“Adicionar à Tela de Início”</b>.</small>
+                  </div>
+                </div>
+                <div className="login-install-step">
+                  <span className="step-num">3</span>
+                  <div>
+                    <b>Toque em Adicionar</b>
+                    <small>O aplicativo ficará disponível no Dock e na Tela de Início do iPad com notificações e modo offline.</small>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {installTab === 'mac' && (
+              <div className="login-install-steps">
+                <p style={{ margin: '0 0 10px', fontSize: '13.5px', color: 'var(--muted)' }}>
+                  Para instalar no Dock e Launchpad do seu <b>MacBook (macOS)</b>:
+                </p>
+                <div className="login-install-step">
+                  <span className="step-num">1</span>
+                  <div>
+                    <b>No Safari do MacBook</b>
+                    <small>Clique em <b>Arquivo</b> na barra de menus do topo (ou no botão Compartilhar) e escolha <b>“Adicionar ao Dock…”</b>.</small>
+                  </div>
+                </div>
+                <div className="login-install-step">
+                  <span className="step-num">2</span>
+                  <div>
+                    <b>Ou no Google Chrome / Edge (macOS)</b>
+                    <small>Clique no ícone de <b>Instalar aplicativo</b> no canto direito da barra de endereços.</small>
+                  </div>
+                </div>
+                <div className="login-install-step">
+                  <span className="step-num">3</span>
+                  <div>
+                    <b>Acesso Direto pelo Dock</b>
+                    <small>A AGENDA INTELIGENTE abrirá em janela dedicada do macOS com suporte a gestos do trackpad e atalhos (⌘+Z, ⌘+C, ⌘+V).</small>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--line)' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowInstallModal(false)}
+                style={{ width: '100%', justifyContent: 'center', height: '40px', borderRadius: '11px' }}
+              >
+                Entendi
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Bottom Info - Copyright Pr. Keidson Rodrigues */}
       <footer className="login-footer">
