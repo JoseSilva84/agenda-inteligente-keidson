@@ -442,7 +442,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <div>
                   <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Baixar Aplicativo Apple</h2>
                   <p style={{ fontSize: '12.5px', color: 'var(--muted)', margin: 0 }}>
-                    Instale a AGENDA INTELIGENTE no seu dispositivo
+                    Instale o Smart Vida no seu dispositivo
                   </p>
                 </div>
               </div>
@@ -561,7 +561,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   <span className="step-num">3</span>
                   <div>
                     <b>Acesso Direto pelo Dock</b>
-                    <small>A AGENDA INTELIGENTE abrirá em janela dedicada do macOS com suporte a gestos do trackpad e atalhos (⌘+Z, ⌘+C, ⌘+V).</small>
+                    <small>O Smart Vida abrirá em janela dedicada do macOS com suporte a gestos do trackpad e atalhos (⌘+Z, ⌘+C, ⌘+V).</small>
                   </div>
                 </div>
               </div>
