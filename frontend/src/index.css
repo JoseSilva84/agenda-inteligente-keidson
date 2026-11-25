@@ -3127,18 +3127,24 @@ svg.i {
    ============================================================================== */
 .ai-fab-button {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1000;
+  bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+  right: max(24px, calc(env(safe-area-inset-right, 0px) + 16px));
+  z-index: 1003;
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   background: linear-gradient(135deg, #2A4CDB 0%, #8B5CF6 100%);
   color: #FFFFFF;
   display: grid;
   place-items: center;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: transparent;
   box-shadow: 0 8px 24px rgba(42, 76, 219, 0.45), 0 0 16px rgba(139, 92, 246, 0.35);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
@@ -3149,14 +3155,28 @@ svg.i {
 .ai-fab-button:active {
   transform: scale(0.96);
 }
+.ai-fab-button.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.1) !important;
+  transition: box-shadow 0.15s ease !important;
+  box-shadow: 0 16px 38px rgba(42, 76, 219, 0.68), 0 0 26px rgba(139, 92, 246, 0.65);
+}
 .ai-fab-button .ai-fab-icon {
   width: 24px;
   height: 24px;
   stroke-width: 2;
+  pointer-events: none;
   transition: transform 0.25s ease;
 }
 .ai-fab-button.active .ai-fab-icon {
   transform: rotate(18deg) scale(1.05);
+}
+
+@media (max-width: 900px) {
+  .ai-fab-button {
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    right: max(16px, calc(env(safe-area-inset-right, 0px) + 12px));
+  }
 }
 
 /* Modal / Janela Flutuante de IA */

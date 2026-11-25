@@ -11,6 +11,35 @@ import { openNotifHistory } from './engine/agendaModals';
 import { initAgendaEngine } from './engine/agendaEvents';
 
 const THEME_KEY = 'agenda-inteligente-theme';
+const AI_FAB_POS_KEY = 'agenda-inteligente-ai-fab-pos';
+const FAB_SIZE = 52;
+const FAB_MARGIN = 12;
+
+export interface FabPosition {
+  x: number;
+  y: number;
+}
+
+function getViewportSize() {
+  if (typeof window === 'undefined') return { vw: 1280, vh: 800 };
+  const vv = window.visualViewport;
+  return {
+    vw: vv ? vv.width : window.innerWidth,
+    vh: vv ? vv.height : window.innerHeight
+  };
+}
+
+function clampFabPosition(x: number, y: number): FabPosition {
+  const { vw, vh } = getViewportSize();
+  const minX = FAB_MARGIN;
+  const minY = FAB_MARGIN;
+  const maxX = Math.max(minX, vw - FAB_SIZE - FAB_MARGIN);
+  const maxY = Math.max(minY, vh - FAB_SIZE - FAB_MARGIN);
+  return {
+    x: Math.round(Math.min(maxX, Math.max(minX, x))),
+    y: Math.round(Math.min(maxY, Math.max(minY, y)))
+  };
+}
 
 interface AgendaShellProps {
   user: UserProfile;
@@ -34,6 +63,175 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
   const [isNotifSubOpen, setIsNotifSubOpen] = useState(false);
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isAiMaximized, setIsAiMaximized] = useState(false);
+
+  const fabBtnRef = useRef<HTMLButtonElement>(null);
+  const suppressFabClickRef = useRef(false);
+  const lastFabDragEndRef = useRef(0);
+  const fabDragRef = useRef<{
+    active: boolean;
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    offsetX: number;
+    offsetY: number;
+    moved: boolean;
+    currentX: number;
+    currentY: number;
+  }>({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    offsetX: 0,
+    offsetY: 0,
+    moved: false,
+    currentX: 0,
+    currentY: 0
+  });
+
+  const [isFabDragging, setIsFabDragging] = useState(false);
+  const [fabPos, setFabPos] = useState<FabPosition | null>(() => {
+    try {
+      const raw = localStorage.getItem(AI_FAB_POS_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+        return clampFabPosition(parsed.x, parsed.y);
+      }
+    } catch {}
+    return null;
+  });
+
+  useEffect(() => {
+    const handleViewportResize = () => {
+      setFabPos((prev) => {
+        if (!prev) return null;
+        const clamped = clampFabPosition(prev.x, prev.y);
+        if (clamped.x === prev.x && clamped.y === prev.y) return prev;
+        return clamped;
+      });
+    };
+
+    window.addEventListener('resize', handleViewportResize);
+    window.addEventListener('orientationchange', handleViewportResize);
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', handleViewportResize);
+
+    return () => {
+      window.removeEventListener('resize', handleViewportResize);
+      window.removeEventListener('orientationchange', handleViewportResize);
+      vv?.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const btn = fabBtnRef.current;
+    if (!btn) return;
+
+    // Previne scroll e rubber-band do Safari no iPhone / iPad durante o arraste por toque
+    const handleTouchMove = (e: TouchEvent) => {
+      if (fabDragRef.current.active) {
+        e.preventDefault();
+      }
+    };
+
+    btn.addEventListener('touchmove', handleTouchMove, { passive: false });
+    return () => {
+      btn.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
+  const handleFabPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.stopPropagation();
+
+    const btn = fabBtnRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+
+    fabDragRef.current = {
+      active: true,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      moved: false,
+      currentX: rect.left,
+      currentY: rect.top
+    };
+
+    const handleWindowPointerMove = (ev: PointerEvent) => {
+      const state = fabDragRef.current;
+      if (!state.active || (state.pointerId !== null && ev.pointerId !== state.pointerId)) return;
+
+      const dist = Math.hypot(ev.clientX - state.startX, ev.clientY - state.startY);
+      if (!state.moved) {
+        if (dist < 5) return;
+        state.moved = true;
+        suppressFabClickRef.current = true;
+        setIsFabDragging(true);
+        try {
+          btn.setPointerCapture(ev.pointerId);
+        } catch {}
+      }
+
+      ev.preventDefault();
+      const clamped = clampFabPosition(ev.clientX - state.offsetX, ev.clientY - state.offsetY);
+      state.currentX = clamped.x;
+      state.currentY = clamped.y;
+
+      btn.style.left = `${clamped.x}px`;
+      btn.style.top = `${clamped.y}px`;
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+    };
+
+    const finishDrag = (ev: PointerEvent) => {
+      const state = fabDragRef.current;
+      if (!state.active || (state.pointerId !== null && ev.pointerId !== state.pointerId)) return;
+
+      window.removeEventListener('pointermove', handleWindowPointerMove);
+      window.removeEventListener('pointerup', finishDrag);
+      window.removeEventListener('pointercancel', finishDrag);
+
+      const wasMoved = state.moved;
+      const finalPos = clampFabPosition(state.currentX, state.currentY);
+      state.active = false;
+      state.pointerId = null;
+      state.moved = false;
+
+      try {
+        if (btn.hasPointerCapture?.(ev.pointerId)) {
+          btn.releasePointerCapture(ev.pointerId);
+        }
+      } catch {}
+
+      if (wasMoved) {
+        lastFabDragEndRef.current = Date.now();
+        suppressFabClickRef.current = true;
+        setIsFabDragging(false);
+        setFabPos(finalPos);
+        try {
+          localStorage.setItem(AI_FAB_POS_KEY, JSON.stringify(finalPos));
+        } catch {}
+      }
+    };
+
+    window.addEventListener('pointermove', handleWindowPointerMove, { passive: false });
+    window.addEventListener('pointerup', finishDrag);
+    window.addEventListener('pointercancel', finishDrag);
+  };
+
+  const handleFabClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (suppressFabClickRef.current || Date.now() - lastFabDragEndRef.current < 280) {
+      suppressFabClickRef.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setIsAiOpen((prev) => !prev);
+  };
 
   useEffect(() => {
     initAgendaEngine(onSetTheme);
@@ -295,13 +493,27 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
       <div id="pop-root"></div>
       <div id="modal-root"></div>
 
-      {/* Botão Flutuante da IA */}
+      {/* Botão Flutuante da IA (Arrastável em MacBook, iPad e iPhone) */}
       <button
+        ref={fabBtnRef}
         type="button"
-        className={`ai-fab-button ${isAiOpen ? 'active' : ''}`}
-        onClick={() => setIsAiOpen((prev) => !prev)}
-        title="Assistente IA Smart Vida"
-        aria-label="Abrir Assistente IA Smart Vida"
+        draggable={false}
+        className={`ai-fab-button ${isAiOpen ? 'active' : ''} ${isFabDragging ? 'is-dragging' : ''}`}
+        style={
+          fabPos
+            ? {
+                left: `${fabPos.x}px`,
+                top: `${fabPos.y}px`,
+                right: 'auto',
+                bottom: 'auto'
+              }
+            : undefined
+        }
+        onPointerDown={handleFabPointerDown}
+        onClick={handleFabClick}
+        onContextMenu={(e) => e.preventDefault()}
+        title="Assistente IA Smart Vida (clique para abrir ou arraste para mover)"
+        aria-label="Assistente IA Smart Vida — clique para abrir ou arraste para mover"
       >
         <svg className="i ai-fab-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
           <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z" />
@@ -315,6 +527,7 @@ const AgendaShell: React.FC<AgendaShellProps> = ({
         onClose={() => setIsAiOpen(false)}
         isMaximized={isAiMaximized}
         onToggleMaximize={() => setIsAiMaximized((prev) => !prev)}
+        anchorPos={fabPos}
       />
     </motion.div>
   );

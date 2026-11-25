@@ -13,6 +13,44 @@ interface AiAssistantModalProps {
   onClose: () => void;
   isMaximized: boolean;
   onToggleMaximize: () => void;
+  anchorPos?: { x: number; y: number } | null;
+}
+
+function computeCompactModalStyle(
+  anchorPos?: { x: number; y: number } | null
+): { left: string; top: string; right: 'auto'; bottom: 'auto' } | undefined {
+  if (!anchorPos || typeof window === 'undefined') return undefined;
+  const vv = window.visualViewport;
+  const vw = vv ? vv.width : window.innerWidth;
+  const vh = vv ? vv.height : window.innerHeight;
+  const modalW = Math.min(390, vw - 32);
+  const modalH = Math.min(540, vh - 110);
+  const fabSize = 52;
+  const gap = 12;
+  const margin = 12;
+
+  let left =
+    anchorPos.x + fabSize / 2 >= vw / 2
+      ? anchorPos.x + fabSize - modalW
+      : anchorPos.x;
+  left = Math.round(Math.max(margin, Math.min(vw - modalW - margin, left)));
+
+  let top: number;
+  if (anchorPos.y - gap - modalH >= margin) {
+    top = anchorPos.y - gap - modalH;
+  } else if (anchorPos.y + fabSize + gap + modalH <= vh - margin) {
+    top = anchorPos.y + fabSize + gap;
+  } else {
+    top = anchorPos.y - modalH / 2;
+  }
+  top = Math.round(Math.max(margin, Math.min(vh - modalH - margin, top)));
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    right: 'auto',
+    bottom: 'auto'
+  };
 }
 
 const DEFAULT_SUGGESTIONS = [
@@ -27,7 +65,8 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
   isOpen,
   onClose,
   isMaximized,
-  onToggleMaximize
+  onToggleMaximize,
+  anchorPos
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -129,6 +168,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
         exit={{ opacity: 0, scale: 0.92, y: 20 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         className={`ai-modal-container ${isMaximized ? 'is-maximized' : 'is-compact'}`}
+        style={!isMaximized ? computeCompactModalStyle(anchorPos) : undefined}
       >
         {/* Cabeçalho */}
         <div className="ai-modal-header">
