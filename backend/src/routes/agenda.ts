@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { prisma, isPostgresConnected, loadLocalStore, saveLocalStore, DEFAULT_SETTINGS, DEFAULT_CATEGORIES } from '../lib/db';
+import { prisma, isPostgresConnected, loadLocalStore, saveLocalStore, DEFAULT_SETTINGS, DEFAULT_CATEGORIES, DATA_DIR } from '../lib/db';
 import { authMiddleware } from '../middleware/auth';
 
-const UPLOADS_DIR = path.join(process.cwd(), 'data', 'uploads');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 function safeFileKey(id: string): string {
   return String(id || '').replace(/[^a-zA-Z0-9_-]/g, '_');

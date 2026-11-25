@@ -124,7 +124,9 @@ export interface LocalStoreData {
   >;
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+export const DATA_DIR =
+  process.env.AGENDA_DATA_DIR ||
+  (fs.existsSync('/app/backend/data') ? '/app/backend/data' : path.join(process.cwd(), 'data'));
 const DATA_FILE = path.join(DATA_DIR, 'local-postgres-mirror.json');
 
 export function loadLocalStore(): LocalStoreData {
