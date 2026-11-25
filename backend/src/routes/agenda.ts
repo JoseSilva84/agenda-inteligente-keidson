@@ -1,6 +1,89 @@
 import { Router, Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { prisma, isPostgresConnected, loadLocalStore, saveLocalStore, DEFAULT_SETTINGS, DEFAULT_CATEGORIES } from '../lib/db';
 import { authMiddleware } from '../middleware/auth';
+
+const UPLOADS_DIR = path.join(process.cwd(), 'data', 'uploads');
+
+function safeFileKey(id: string): string {
+  return String(id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function writeFileDiskCache(userId: string, id: string, name: string, mimeType: string, dataBase64: string) {
+  try {
+    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    const key = safeFileKey(id);
+    const binPath = path.join(UPLOADS_DIR, `${key}.bin`);
+    const metaPath = path.join(UPLOADS_DIR, `${key}.meta.json`);
+    const buf = Buffer.from(dataBase64, 'base64');
+    fs.writeFileSync(binPath, buf);
+    fs.writeFileSync(
+      metaPath,
+      JSON.stringify({ id, userId, name, mimeType, size: buf.length }),
+      'utf-8'
+    );
+  } catch (err) {
+    console.warn('Aviso: falha ao gravar cache de arquivo em disco:', err);
+  }
+}
+
+function removeFileDiskCache(id: string) {
+  try {
+    const key = safeFileKey(id);
+    const binPath = path.join(UPLOADS_DIR, `${key}.bin`);
+    const metaPath = path.join(UPLOADS_DIR, `${key}.meta.json`);
+    if (fs.existsSync(binPath)) fs.unlinkSync(binPath);
+    if (fs.existsSync(metaPath)) fs.unlinkSync(metaPath);
+  } catch {}
+}
+
+async function ensureDiskCachedFile(
+  userId: string,
+  fileId: string
+): Promise<{ binPath: string; name: string; mimeType: string; size: number } | null> {
+  const key = safeFileKey(fileId);
+  const binPath = path.join(UPLOADS_DIR, `${key}.bin`);
+  const metaPath = path.join(UPLOADS_DIR, `${key}.meta.json`);
+
+  if (fs.existsSync(binPath) && fs.existsSync(metaPath)) {
+    try {
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+      if (!meta.userId || meta.userId === userId) {
+        const stat = fs.statSync(binPath);
+        return {
+          binPath,
+          name: meta.name || 'arquivo',
+          mimeType: meta.mimeType || 'application/octet-stream',
+          size: stat.size
+        };
+      }
+    } catch {}
+  }
+
+  const usePg = await isPostgresConnected();
+  if (usePg) {
+    const f = await prisma.fileAsset.findFirst({ where: { id: fileId, userId } });
+    if (!f) return null;
+    writeFileDiskCache(userId, f.id, f.name, f.mimeType, f.dataBase64);
+    if (fs.existsSync(binPath)) {
+      const stat = fs.statSync(binPath);
+      return { binPath, name: f.name, mimeType: f.mimeType, size: stat.size };
+    }
+  } else {
+    const store = loadLocalStore();
+    const bucket = ensureUserBucket(store, userId);
+    const f = bucket.files[fileId];
+    if (!f) return null;
+    writeFileDiskCache(userId, f.id, f.name, f.mimeType, f.dataBase64);
+    if (fs.existsSync(binPath)) {
+      const stat = fs.statSync(binPath);
+      return { binPath, name: f.name, mimeType: f.mimeType, size: stat.size };
+    }
+  }
+
+  return null;
+}
 
 const router = Router();
 router.use(authMiddleware);
@@ -323,7 +406,7 @@ router.delete('/doc/:docId', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/agenda/files — upload de anexo (Base64)
+// POST /api/agenda/files — upload de anexo (Base64 + Cache Binário em Disco para Streaming)
 router.post('/files', async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
@@ -333,12 +416,19 @@ router.post('/files', async (req: Request, res: Response) => {
       return;
     }
 
+    const cleanName = name || 'arquivo';
+    const cleanMime = mimeType || 'application/octet-stream';
+    const cleanSize = Number(size || 0);
+
+    // Salva em disco em data/uploads para streaming leve via HTTP Range (206 Partial Content)
+    writeFileDiskCache(userId, id, cleanName, cleanMime, dataBase64);
+
     const usePg = await isPostgresConnected();
     if (usePg) {
       await prisma.fileAsset.upsert({
         where: { id },
-        create: { id, userId, name: name || 'arquivo', mimeType: mimeType || 'application/octet-stream', size: Number(size || 0), dataBase64 },
-        update: { name: name || 'arquivo', mimeType: mimeType || 'application/octet-stream', size: Number(size || 0), dataBase64 }
+        create: { id, userId, name: cleanName, mimeType: cleanMime, size: cleanSize, dataBase64 },
+        update: { name: cleanName, mimeType: cleanMime, size: cleanSize, dataBase64 }
       });
       res.status(201).json({ id, store: 'asset' });
       return;
@@ -346,12 +436,60 @@ router.post('/files', async (req: Request, res: Response) => {
 
     const store = loadLocalStore();
     const bucket = ensureUserBucket(store, userId);
-    bucket.files[id] = { id, name: name || 'arquivo', mimeType: mimeType || 'application/octet-stream', size: Number(size || 0), dataBase64 };
+    bucket.files[id] = { id, name: cleanName, mimeType: cleanMime, size: cleanSize, dataBase64 };
     saveLocalStore(store);
     res.status(201).json({ id, store: 'asset' });
   } catch (err) {
     console.error('Erro no upload de arquivo:', err);
     res.status(500).json({ error: 'Erro ao salvar anexo.' });
+  }
+});
+
+// GET /api/agenda/files/:fileId/stream — streaming binário com suporte a HTTP Range (vídeo, áudio, PDF e documentos)
+router.get('/files/:fileId/stream', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const fileId = req.params.fileId;
+    const cached = await ensureDiskCachedFile(userId, fileId);
+    if (!cached) {
+      res.status(404).json({ error: 'Arquivo não encontrado.' });
+      return;
+    }
+
+    const { binPath, name, mimeType, size } = cached;
+    const isDownload = req.query.download === '1';
+    const encodedName = encodeURIComponent(name);
+
+    res.setHeader('Content-Type', mimeType || 'application/octet-stream');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    res.setHeader(
+      'Content-Disposition',
+      `${isDownload ? 'attachment' : 'inline'}; filename*=UTF-8''${encodedName}`
+    );
+
+    const range = req.headers.range;
+    if (range && size > 0) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : size - 1;
+      if (isNaN(start) || isNaN(end) || start >= size || end >= size || start > end) {
+        res.status(416).setHeader('Content-Range', `bytes */${size}`).end();
+        return;
+      }
+      const chunkSize = end - start + 1;
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+      res.setHeader('Content-Length', String(chunkSize));
+      fs.createReadStream(binPath, { start, end }).pipe(res);
+      return;
+    }
+
+    res.setHeader('Content-Length', String(size));
+    fs.createReadStream(binPath).pipe(res);
+  } catch (err) {
+    console.error('Erro no streaming de arquivo:', err);
+    res.status(500).json({ error: 'Erro ao transmitir arquivo.' });
   }
 });
 
@@ -390,6 +528,7 @@ router.delete('/files/:fileId', async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
     const fileId = req.params.fileId;
+    removeFileDiskCache(fileId);
     const usePg = await isPostgresConnected();
 
     if (usePg) {

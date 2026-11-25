@@ -1575,6 +1575,63 @@ body.touch-locked .ev .rzx {
   border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
   color: var(--ok);
 }
+.ev-top-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  z-index: 4;
+}
+.ev-att-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  z-index: 4;
+  position: relative;
+}
+.ev-att-badge {
+  border: 1px solid color-mix(in srgb, var(--att-c, var(--accent)) 38%, transparent);
+  background: color-mix(in srgb, var(--surface) 78%, var(--att-c, var(--accent)));
+  color: var(--ink);
+  border-radius: 5px;
+  height: 19px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700 !important;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease;
+  z-index: 5;
+}
+.ev-att-badge svg.i {
+  color: var(--att-c, var(--accent));
+  flex-shrink: 0;
+}
+.ev-att-badge.is-compact {
+  padding: 0 4px;
+  min-width: 20px;
+  justify-content: center;
+}
+.ev-att-badge:hover {
+  background: color-mix(in srgb, var(--att-c, var(--accent)) 28%, var(--surface));
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+}
+.ev-att-badge:active {
+  transform: scale(0.94);
+}
+#ed-att-sect.is-dragover {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
 .ev-qnote-btn,
 .chip-qnote-btn {
   border: 0;

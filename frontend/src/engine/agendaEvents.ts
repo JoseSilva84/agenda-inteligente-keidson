@@ -61,6 +61,7 @@ import {
   closeModal,
   copyOcc,
   copyText,
+  openActivityAttachment,
   openEditor,
   openPeopleDay,
   openQuickNote,
@@ -637,7 +638,7 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || e.ctrlKey) return;
     const t = e.target as HTMLElement;
-    if (t.closest('input, .quick, .trip-l, [data-qnote]')) return;
+    if (t.closest('input, .quick, .trip-l, [data-qnote], [data-open-att]')) return;
     const el = t.closest('.ev, .chip') as HTMLElement | null;
     if (!el) {
       startSel(e);
@@ -856,6 +857,13 @@ export function initAgendaEngine(onSetTheme?: (mode: 'dark' | 'light') => void) 
       const c = t.closest('[data-close]') as HTMLElement;
       closeModal(t.closest('.overlay') as HTMLElement);
       if (c.dataset.tab) setTab(c.dataset.tab);
+      return;
+    }
+    const attBtn = t.closest('[data-open-att]') as HTMLElement | null;
+    if (attBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      openActivityAttachment(attBtn.dataset.openAtt!, attBtn.dataset.attKind || 'all');
       return;
     }
     const qn = t.closest('[data-qnote]') as HTMLElement | null;

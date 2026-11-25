@@ -51,8 +51,88 @@ export const ICON: Record<string, string> = {
   copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/>',
-  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  pdf: '<path d="M6 2h8l5 5v15H6z"/><path d="M14 2v5h5M8 14h8M8 17.5h5"/>',
+  audio: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  mic: '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/>',
+  video: '<rect x="2.5" y="5.5" width="13.5" height="13" rx="2"/><path d="m16 10.2 5.5-3.2v10l-5.5-3.2z"/>',
+  img: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/>',
+  doc: '<path d="M6 2h8l5 5v15H6z"/><path d="M14 2v5h5M8 12h8M8 15.5h8M8 19h5"/>',
+  xls: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+  play: '<polygon points="6 4 20 12 6 20 6 4"/>'
 };
+
+export interface FileClassification {
+  category: 'pdf' | 'audio' | 'video' | 'image' | 'word' | 'excel' | 'ppt' | 'text' | 'file';
+  badge: string;
+  label: string;
+  icon: string;
+  color: string;
+}
+
+export function classifyFile(f: { name?: string; type?: string }): FileClassification {
+  const name = String(f?.name || '').toLowerCase();
+  const type = String(f?.type || '').toLowerCase();
+
+  if (type.includes('pdf') || /\.pdf$/i.test(name)) {
+    return { category: 'pdf', badge: 'PDF', label: 'Documento PDF', icon: 'pdf', color: '#E11D48' };
+  }
+  if (type.startsWith('audio/') || /\.(mp3|m4a|wav|ogg|oga|aac|opus|flac|weba)$/i.test(name)) {
+    return { category: 'audio', badge: 'Áudio', label: 'Áudio', icon: 'audio', color: '#8B5CF6' };
+  }
+  if (type.startsWith('video/') || /\.(mp4|m4v|mov|webm|avi|mkv|3gp)$/i.test(name)) {
+    return { category: 'video', badge: 'Vídeo', label: 'Vídeo', icon: 'video', color: '#2563EB' };
+  }
+  if (type.startsWith('image/') || /\.(jpe?g|png|webp|gif|svg|heic|bmp)$/i.test(name)) {
+    return { category: 'image', badge: 'Foto', label: 'Imagem', icon: 'img', color: '#059669' };
+  }
+  if (
+    type.includes('word') ||
+    type.includes('officedocument.wordprocessingml') ||
+    /\.(docx?|rtf|odt|pages)$/i.test(name)
+  ) {
+    return { category: 'word', badge: 'Word', label: 'Documento Word', icon: 'doc', color: '#1D4ED8' };
+  }
+  if (
+    type.includes('excel') ||
+    type.includes('spreadsheetml') ||
+    type.includes('csv') ||
+    /\.(xlsx?|csv|ods|numbers)$/i.test(name)
+  ) {
+    return { category: 'excel', badge: 'Excel', label: 'Planilha Excel', icon: 'xls', color: '#15803D' };
+  }
+  if (
+    type.includes('powerpoint') ||
+    type.includes('presentationml') ||
+    /\.(pptx?|odp|key)$/i.test(name)
+  ) {
+    return { category: 'ppt', badge: 'Slides', label: 'Apresentação', icon: 'doc', color: '#C2410C' };
+  }
+  if (type.startsWith('text/') || /\.(txt|md|json|xml|log)$/i.test(name)) {
+    return { category: 'text', badge: 'Texto', label: 'Arquivo de Texto', icon: 'note', color: '#475569' };
+  }
+  const ext = (name.split('.').pop() || '').toUpperCase().slice(0, 5);
+  return {
+    category: 'file',
+    badge: ext || 'Arq',
+    label: 'Documento / Arquivo',
+    icon: 'clip',
+    color: '#6366F1'
+  };
+}
+
+export function extractYouTubeId(url?: string): string | null {
+  if (!url) return null;
+  const raw = String(url).trim();
+  const m =
+    raw.match(/(?:youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i) ||
+    raw.match(/^([A-Za-z0-9_-]{11})$/);
+  return m ? m[1] : null;
+}
+
+export function isYouTubeUrl(url?: string): boolean {
+  return Boolean(extractYouTubeId(url)) || /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url || '');
+}
 
 export const ic = (n: string, s?: number) =>
   `<svg class="i" viewBox="0 0 24 24"${s ? ` style="width:${s}px;height:${s}px"` : ''}>${ICON[n] || ''}</svg>`;

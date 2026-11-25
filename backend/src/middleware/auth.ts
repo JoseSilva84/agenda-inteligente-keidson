@@ -26,12 +26,14 @@ export function signToken(payload: AuthPayload): string {
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const queryToken = typeof req.query.token === 'string' ? req.query.token : '';
+  const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : queryToken;
+
+  if (!token) {
     res.status(401).json({ error: 'Não autorizado. Faça login para acessar a Agenda Inteligente.' });
     return;
   }
 
-  const token = authHeader.slice(7);
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload;
     req.user = decoded;

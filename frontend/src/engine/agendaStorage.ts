@@ -1,6 +1,51 @@
 import { toast as sonnerToast } from 'sonner';
-import { api } from '../services/api';
+import { api, getStoredAuth } from '../services/api';
 import { uid, clone } from './agendaHelpers';
+
+export function inferMimeType(name?: string, fallbackType?: string): string {
+  if (fallbackType && fallbackType !== 'application/octet-stream') return fallbackType;
+  const ext = String(name || '')
+    .toLowerCase()
+    .split('.')
+    .pop() || '';
+  const map: Record<string, string> = {
+    pdf: 'application/pdf',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    svg: 'image/svg+xml',
+    heic: 'image/heic',
+    mp4: 'video/mp4',
+    m4v: 'video/mp4',
+    mov: 'video/quicktime',
+    webm: 'video/webm',
+    avi: 'video/x-msvideo',
+    mkv: 'video/x-matroska',
+    mp3: 'audio/mpeg',
+    m4a: 'audio/mp4',
+    aac: 'audio/aac',
+    wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    oga: 'audio/ogg',
+    opus: 'audio/opus',
+    flac: 'audio/flac',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    csv: 'text/csv',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    txt: 'text/plain',
+    md: 'text/markdown',
+    json: 'application/json',
+    zip: 'application/zip',
+    rar: 'application/vnd.rar'
+  };
+  return map[ext] || fallbackType || 'application/octet-stream';
+}
 
 export const DEFAULT_SETTINGS = () => ({
   kind: 'settings',
@@ -182,37 +227,57 @@ export const FileStore = {
     } catch {}
     return 'asset';
   },
-  limit(m: string | null) {
-    return (m === 'db' ? 10 : 20) * 1048576;
+  limit(_m: string | null) {
+    return 50 * 1048576; // Até 50 MB por arquivo
   },
-  async put(file: Blob | File): Promise<{ id: string; store: string }> {
+  streamUrl(f: any, download = false): string {
+    const base = (api.defaults.baseURL || '/api').replace(/\/$/, '');
+    const token = getStoredAuth().token || '';
+    const q = new URLSearchParams();
+    if (token) q.set('token', token);
+    if (download) q.set('download', '1');
+    return `${base}/agenda/files/${encodeURIComponent(f.id)}/stream?${q.toString()}`;
+  },
+  async localBlob(id: string): Promise<Blob | null> {
+    try {
+      const b = await this.idbOp('readonly', (st) => st.get(id));
+      return b || null;
+    } catch {
+      return null;
+    }
+  },
+  async put(file: Blob | File, customName?: string): Promise<{ id: string; store: string }> {
     const id = 'fidb_' + uid();
+    const fileName = customName || (file as File).name || 'arquivo';
+    const mimeType = inferMimeType(fileName, file.type);
     try {
       await this.idbOp('readwrite', (st) => st.put(file, id));
     } catch {}
-    // Sincroniza com o backend Node.js/PostgreSQL via Axios se tiver até 12MB
-    if (file.size <= 12 * 1048576) {
+    // Sincroniza com o backend Node.js/PostgreSQL + Cache de Streaming em Disco (até 50MB)
+    if (file.size <= 50 * 1048576) {
       try {
         const dataBase64 = await blobToB64(file);
-        await api.post('/agenda/files', {
-          id,
-          name: (file as File).name || 'arquivo',
-          mimeType: file.type || 'application/octet-stream',
-          size: file.size,
-          dataBase64
-        });
+        await api.post(
+          '/agenda/files',
+          {
+            id,
+            name: fileName,
+            mimeType,
+            size: file.size,
+            dataBase64
+          },
+          { timeout: 120000 }
+        );
       } catch {}
     }
     return { id, store: 'idb' };
   },
   async blob(f: any): Promise<Blob> {
-    try {
-      const b = await this.idbOp('readonly', (st) => st.get(f.id));
-      if (b) return b;
-    } catch {}
-    const { data } = await api.get(`/agenda/files/${encodeURIComponent(f.id)}`);
+    const local = await this.localBlob(f.id);
+    if (local) return local;
+    const { data } = await api.get(`/agenda/files/${encodeURIComponent(f.id)}`, { timeout: 60000 });
     if (data && data.dataBase64) {
-      const blob = b64ToBlob(data.dataBase64, data.mimeType || f.type);
+      const blob = b64ToBlob(data.dataBase64, inferMimeType(f.name, data.mimeType || f.type));
       try {
         await this.idbOp('readwrite', (st) => st.put(blob, f.id));
       } catch {}

@@ -1,4 +1,5 @@
 import { api } from '../services/api';
+import { classifyFile, isYouTubeUrl } from './agendaHelpers';
 import tippy, { type Instance } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import {
@@ -889,20 +890,70 @@ function layoutDay(list: any[]) {
   return res;
 }
 
-export function markIcons(it: any) {
+export function mediaBadgesHTML(key: string, it: any, compact = false): string {
+  const files: any[] = it.files || [];
+  const links: any[] = it.links || [];
+  if (!files.length && !links.length) return '';
+
+  const pdfs = files.filter((f) => classifyFile(f).category === 'pdf');
+  const audios = files.filter((f) => classifyFile(f).category === 'audio');
+  const videos = files.filter((f) => classifyFile(f).category === 'video');
+  const images = files.filter((f) => classifyFile(f).category === 'image');
+  const docs = files.filter((f) => {
+    const c = classifyFile(f).category;
+    return c === 'word' || c === 'excel' || c === 'ppt' || c === 'text' || c === 'file';
+  });
+  const yts = links.filter((l) => isYouTubeUrl(l.url));
+  const webLinks = links.filter((l) => !isYouTubeUrl(l.url));
+
+  const badges: string[] = [];
+  const mk = (kind: string, iconName: string, label: string, count: number, title: string, color: string) => {
+    const cnt = count > 1 ? ` ${count}` : '';
+    return `<button type="button" class="ev-att-badge${compact ? ' is-compact' : ''}" data-open-att="${esc(
+      key
+    )}" data-att-kind="${kind}" title="${esc(title)}" aria-label="${esc(
+      title
+    )}" style="--att-c:${color}">${ic(iconName, 11)}${
+      compact ? (count > 1 ? `<span>${count}</span>` : '') : `<span>${esc(label)}${cnt}</span>`
+    }</button>`;
+  };
+
+  if (audios.length) {
+    badges.push(mk('audio', 'audio', 'Áudio', audios.length, 'Clique para dar play e ouvir o áudio', '#8B5CF6'));
+  }
+  if (videos.length) {
+    badges.push(mk('video', 'video', 'Vídeo', videos.length, 'Clique para dar play e assistir o vídeo', '#2563EB'));
+  }
+  if (yts.length) {
+    badges.push(mk('yt', 'yt', 'YouTube', yts.length, 'Clique para assistir o vídeo do YouTube dentro do sistema', '#E11D48'));
+  }
+  if (pdfs.length) {
+    badges.push(mk('pdf', 'pdf', 'PDF', pdfs.length, 'Clique para abrir o PDF', '#E11D48'));
+  }
+  if (images.length) {
+    badges.push(mk('image', 'img', 'Foto', images.length, 'Clique para abrir a foto', '#059669'));
+  }
+  if (docs.length) {
+    const firstDoc = classifyFile(docs[0]);
+    badges.push(
+      mk('doc', firstDoc.icon, firstDoc.badge, docs.length, `Clique para abrir ${firstDoc.label} (${docs[0].name})`, firstDoc.color)
+    );
+  }
+  if (webLinks.length) {
+    badges.push(mk('link', 'clip', 'Link', webLinks.length, 'Clique para abrir o link', '#6366F1'));
+  }
+
+  return badges.join('');
+}
+
+export function markIcons(it: any, key?: string) {
   const notes = !!noteToPlain(it.notes);
   const subs = it.subtasks || [];
   const done = subs.filter((x: any) => x.done).length;
-  const nf = (it.files || []).length;
-  const nl = (it.links || []).length;
-  const na = nf + nl;
-  const attLabel = [nf ? `${nf} ${plural(nf, 'arquivo', 'arquivos')}` : '', nl ? `${nl} ${plural(nl, 'link', 'links')}` : '']
-    .filter(Boolean)
-    .join(' e ');
+  const k = key || it.id || '';
+  const attBadges = mediaBadgesHTML(k, it, true);
   return (
-    (na
-      ? `<span class="ev-ic" title="Anexos: ${attLabel}" aria-label="Anexos: ${attLabel}">${ic('clip')}${na > 1 ? na : ''}</span>`
-      : '') +
+    attBadges +
     (notes ? `<span class="ev-ic" title="Tem anotações" aria-label="Tem anotações">${ic('note')}</span>` : '') +
     (subs.length
       ? `<span class="ev-ic" title="Subtarefas: ${done} de ${subs.length} feitas" aria-label="Subtarefas: ${done} de ${
@@ -944,6 +995,9 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   const plainNote = noteToPlain(o.item.notes);
   const hasNotes = !!plainNote;
   const noteSnippet = hasNotes ? plainNote.split(/\r?\n/)[0].slice(0, 60) : '';
+  const hasAtts = ((o.item.files && o.item.files.length) || (o.item.links && o.item.links.length)) > 0;
+  const topCompactBadges = hasAtts && (short || h < 42) ? mediaBadgesHTML(o.key, o.item, true) : '';
+  const bodyFullBadges = hasAtts && !short && h >= 42 ? `<div class="ev-att-row">${mediaBadgesHTML(o.key, o.item, false)}</div>` : '';
   const quickNoteBtn = `<button type="button" class="ev-qnote-btn${hasNotes ? ' has-note' : ''}" data-qnote="${esc(
     o.key
   )}" title="${hasNotes ? 'Editar anotação rápida' : 'Adicionar anotação rápida'}" aria-label="Anotação rápida">${ic(
@@ -961,7 +1015,7 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   }" style="--c:${c};top:${top}px;height:${h}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px)">
     <div class="ev-top"><div class="ev-t">${
       conflict ? '<span class="warnmark" title="Conflito de horário">!</span>' : ''
-    }${esc(o.item.title)}</div>${quickNoteBtn}</div>${notePreviewHtml}
+    }${esc(o.item.title)}</div><div class="ev-top-actions">${topCompactBadges}${quickNoteBtn}</div></div>${bodyFullBadges}${notePreviewHtml}
     <span class="rz" aria-hidden="true"></span><span class="rzx" aria-hidden="true" title="Arraste para os lados para ocupar outros dias"></span></div>`;
 }
 
@@ -1140,7 +1194,7 @@ export function monthHTML() {
               o.key
             )}" tabindex="0" role="button" style="--c:${safeColor(cat(o.item.category).color)}"><i></i><span class="chip-t">${esc(
               occTitle(o)
-            )}</span>${o.isSub ? '' : markIcons(o.item)}<button type="button" class="chip-qnote-btn${
+            )}</span>${o.isSub ? '' : markIcons(o.item, o.key)}<button type="button" class="chip-qnote-btn${
               noteToPlain(o.item.notes) ? ' has-note' : ''
             }" data-qnote="${esc(o.key)}" title="Anotação rápida" aria-label="Anotação rápida">${ic('note', 11)}</button></div>`
         )
@@ -1221,7 +1275,7 @@ export function listHTML() {
                 return `<button class="lrow" data-open="${esc(o.key)}" ${tooltipAttr(o)}><span class="dot" style="--c:${safeColor(
                   cat(o.item.category).color
                 )}"></span><span class="num muted small">${fmtH(o.start)}–${fmtH(o.end)}</span><b>${esc(occTitle(o))} ${
-                  o.isSub ? '' : markIcons(o.item)
+                  o.isSub ? '' : markIcons(o.item, o.key)
                 }</b><span class="pill p-${es}">${STATUS[es]}</span></button>`;
               })
               .join('')}</div>`

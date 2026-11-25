@@ -4,10 +4,12 @@ import {
   STATUS,
   WD,
   addY,
+  classifyFile,
   clone,
   dayDiff,
   dow,
   esc,
+  extractYouTubeId,
   fmtD,
   fmtDL,
   fmtDW,
@@ -15,6 +17,7 @@ import {
   fmtH,
   fromMin,
   ic,
+  isYouTubeUrl,
   noteToHtml,
   noteToPlain,
   nowMin,
@@ -46,7 +49,7 @@ import {
   travelSegs,
   travelText
 } from './agendaCore';
-import { FileStore, compressImage, renderPdf, toast } from './agendaStorage';
+import { FileStore, compressImage, inferMimeType, renderPdf, toast } from './agendaStorage';
 import { verifyPasswordApi } from '../services/api';
 import {
   $,
@@ -1242,19 +1245,18 @@ function editorInner(ed: any) {
         : `<div class="addlink" style="grid-template-columns:1fr auto"><input class="inp" id="sub-new" placeholder="Nova subtarefa (Enter adiciona)" aria-label="Nova subtarefa"><button type="button" class="btn btn-sm" data-act="addsub">Adicionar</button></div>`
     }</div>
     ${richNotesFieldHTML('ed-notes', 'Anotações', d.notes || '', 'Pauta, detalhes, o que levar…', ro)}
-    <div class="sect"><h3>Arquivos e links</h3><div id="ed-att"></div>
+    <div class="sect" id="ed-att-sect"><h3>Arquivos e links</h3><div id="ed-att"></div>
       ${
         !ro
-          ? `<div class="actions"><label class="btn btn-sm">${ic(
-              'clip',
-              16
-            )} Anexar PDF<input type="file" id="ed-file" multiple hidden accept="application/pdf,.pdf,text/plain,.txt"></label><label class="btn btn-sm">${ic(
-              'clip',
-              16
-            )} Anexar fotos<input type="file" id="ed-file2" multiple hidden accept="image/*"></label><label class="btn btn-sm">${ic(
-              'clip',
-              16
-            )} Anexar vídeo<input type="file" id="ed-file3" multiple hidden accept="video/mp4,video/webm,video/quicktime"></label></div><p class="note">PDF, fotos e vídeos até 20 MB cada.</p>`
+          ? `<div class="actions att-btn-row">
+              <label class="btn btn-sm">${ic('pdf', 15)} Anexar PDF<input type="file" id="ed-file" multiple hidden accept="application/pdf,.pdf"></label>
+              <label class="btn btn-sm">${ic('audio', 15)} Anexar áudio<input type="file" id="ed-file4" multiple hidden accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.opus,.flac"></label>
+              <button type="button" class="btn btn-sm" id="btn-rec-audio" data-act="rec-audio">${ic('mic', 15)} <span>Gravar áudio</span></button>
+              <label class="btn btn-sm">${ic('img', 15)} Anexar fotos<input type="file" id="ed-file2" multiple hidden accept="image/*"></label>
+              <label class="btn btn-sm">${ic('video', 15)} Anexar vídeo<input type="file" id="ed-file3" multiple hidden accept="video/*,.mp4,.mov,.webm,.m4v"></label>
+              <label class="btn btn-sm">${ic('doc', 15)} Word, Excel e Arquivos<input type="file" id="ed-file5" multiple hidden accept="*/*"></label>
+            </div>
+            <p class="note">Aceita PDF, áudio (MP3/M4A/WAV ou gravação de voz), fotos, vídeos, Word, Excel, PowerPoint e qualquer arquivo até 50 MB.</p>`
           : ''
       }
       <div class="addlink"><input class="inp" id="ln-url" placeholder="Link do YouTube, site, reunião…" aria-label="Endereço do link"><input class="inp" id="ln-label" placeholder="Nome (opcional)" aria-label="Nome do link"><button type="button" class="btn btn-sm" data-act="addlink">Adicionar</button></div>
@@ -1277,7 +1279,8 @@ function editorInner(ed: any) {
   }</div>`;
 }
 
-const isYT = (u?: string) => /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(u || '');
+const isYT = (u?: string) => isYouTubeUrl(u);
+
 function subsHTML(ed: any) {
   const ro = S.readOnly;
   const subs = ed.d.subtasks;
@@ -1316,39 +1319,54 @@ function subsHTML(ed: any) {
 
 function attHTML(ed: any) {
   const d = ed.d;
-  const kind = (f: any) => {
-    const t = f.type || '';
-    if (t.includes('pdf') || /\.pdf$/i.test(f.name)) return 'PDF';
-    if (t.startsWith('image/')) return 'Imagem';
-    if (t.startsWith('video/')) return 'Vídeo';
-    if (/\.docx$/i.test(f.name)) return 'DOCX';
-    return 'Texto';
-  };
   const size = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
   const files = d.files
-    .map(
-      (f: any, i: number) =>
-        `<div class="att"><span class="k">${kind(f)}</span><span class="nm" title="${esc(f.name)}">${esc(
-          f.name
-        )}</span><span class="muted small num">${size(
-          f.size || 0
-        )}</span><button type="button" class="btn btn-sm" data-view-file="${i}">Abrir</button>${
+    .map((f: any, i: number) => {
+      const cls = classifyFile(f);
+      const actLabel =
+        cls.category === 'audio'
+          ? '▶ Ouvir'
+          : cls.category === 'video'
+          ? '▶ Assistir'
+          : cls.category === 'word' || cls.category === 'excel' || cls.category === 'ppt' || cls.category === 'file'
+          ? 'Abrir / Baixar'
+          : 'Abrir';
+      return `<div class="att">
+        <span class="k" style="background:color-mix(in srgb, ${cls.color} 15%, var(--soft));color:${cls.color};border:1px solid color-mix(in srgb, ${cls.color} 32%, transparent);display:inline-flex;align-items:center;gap:4px">
+          ${ic(cls.icon, 13)} ${esc(cls.badge)}
+        </span>
+        <span class="nm" title="${esc(f.name)}" style="cursor:pointer" data-view-file="${i}">${esc(f.name)}</span>
+        <span class="muted small num">${size(f.size || 0)}</span>
+        <button type="button" class="btn btn-sm btn-primary" data-view-file="${i}">${actLabel}</button>
+        ${
           S.readOnly
             ? ''
             : `<button type="button" class="btn btn-sm btn-danger" data-rm-file="${i}" aria-label="Remover ${esc(
                 f.name
               )}">Remover</button>`
-        }</div>`
-    )
+        }
+      </div>`;
+    })
     .join('');
   const links = d.links
     .map((l: any, i: number) => {
       const yt = isYT(l.url);
-      return `<div class="att"><span class="k">${yt ? 'YouTube' : 'Link'}</span>${
-        yt ? ic('yt', 16) : ''
-      }<a class="nm" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(
-        l.label || (yt ? 'Vídeo do YouTube' : l.url)
-      )}</a>${S.readOnly ? '' : `<button type="button" class="btn btn-sm btn-danger" data-rm-link="${i}">Remover</button>`}</div>`;
+      return `<div class="att">
+        <span class="k" style="${
+          yt
+            ? 'background:rgba(225,29,72,0.14);color:#E11D48;border:1px solid rgba(225,29,72,0.3);display:inline-flex;align-items:center;gap:4px'
+            : ''
+        }">${yt ? `${ic('yt', 14)} YouTube` : 'Link'}</span>
+        ${
+          yt
+            ? `<span class="nm" style="cursor:pointer;color:var(--accent);font-weight:600" data-play-yt="${i}" title="Clique para assistir dentro do sistema">${esc(
+                l.label || 'Vídeo do YouTube'
+              )}</span>
+              <button type="button" class="btn btn-sm btn-primary" data-play-yt="${i}">▶ Assistir</button>`
+            : `<a class="nm" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || l.url)}</a>`
+        }
+        ${S.readOnly ? '' : `<button type="button" class="btn btn-sm btn-danger" data-rm-link="${i}">Remover</button>`}
+      </div>`;
     })
     .join('');
   return files + links || '<p class="note" style="margin:0">Nenhum anexo ainda.</p>';
@@ -1581,7 +1599,7 @@ function bindEditor(w: HTMLElement, ed: any) {
       }
     } else if (t.id === 'ed-auto') d.autoResched = t.checked;
     else if (t.name === 'scope') d.scope = t.value;
-    else if (t.id === 'ed-file' || t.id === 'ed-file2' || t.id === 'ed-file3') {
+    else if (t.id === 'ed-file' || t.id === 'ed-file2' || t.id === 'ed-file3' || t.id === 'ed-file4' || t.id === 'ed-file5') {
       if (t.files) uploadFiles(t.files, ed, refreshAtt).then(() => (t.value = ''));
     } else if (t.dataset.subDate !== undefined) {
       const x = d.subtasks[+t.dataset.subDate];
@@ -1638,7 +1656,12 @@ function bindEditor(w: HTMLElement, ed: any) {
       d[b.dataset.seg] = b.dataset.val;
       $$(`[data-seg="${b.dataset.seg}"]`, w).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     } else if (b.dataset.viewFile !== undefined) openViewer(d.files[+b.dataset.viewFile]);
-    else if (b.dataset.rmFile !== undefined) {
+    else if (b.dataset.playYt !== undefined) {
+      const ln = d.links[+b.dataset.playYt];
+      if (ln) openYouTubeViewer(ln.url, ln.label);
+    } else if (b.dataset.act === 'rec-audio') {
+      toggleAudioRecording(b as HTMLButtonElement, ed, refreshAtt);
+    } else if (b.dataset.rmFile !== undefined) {
       const [x] = d.files.splice(+b.dataset.rmFile, 1);
       if (x) ed.removed.push(x.id);
       refreshAtt();
@@ -1695,10 +1718,88 @@ function bindEditor(w: HTMLElement, ed: any) {
       openEditor(nid);
     }
   });
+  const attSect = $('#ed-att-sect', w) as HTMLElement | null;
+  if (attSect && !S.readOnly) {
+    attSect.addEventListener('dragover', (e: DragEvent) => {
+      e.preventDefault();
+      attSect.classList.add('is-dragover');
+    });
+    attSect.addEventListener('dragleave', () => {
+      attSect.classList.remove('is-dragover');
+    });
+    attSect.addEventListener('drop', (e: DragEvent) => {
+      e.preventDefault();
+      attSect.classList.remove('is-dragover');
+      if (e.dataTransfer?.files?.length) {
+        uploadFiles(e.dataTransfer.files, ed, refreshAtt);
+      }
+    });
+  }
+
   f.addEventListener('submit', (e: Event) => {
     e.preventDefault();
     saveEditor(ed, w);
   });
+}
+
+let activeRecorder: { recorder: MediaRecorder; stream: MediaStream; chunks: Blob[] } | null = null;
+
+async function toggleAudioRecording(btn: HTMLButtonElement, ed: any, refresh: () => void) {
+  if (activeRecorder && activeRecorder.recorder.state === 'recording') {
+    activeRecorder.recorder.stop();
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('Gravação de áudio não suportada neste navegador. Use "Anexar áudio".', 'warn');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeCandidates = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
+    const supportedMime =
+      mimeCandidates.find((m) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.(m)) || '';
+    const recorder = supportedMime ? new MediaRecorder(stream, { mimeType: supportedMime }) : new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+    activeRecorder = { recorder, stream, chunks };
+
+    btn.classList.add('btn-danger');
+    const span = btn.querySelector('span');
+    if (span) span.textContent = '⏹ Parar e salvar áudio';
+    toast('🎙️ Gravando áudio… Clique novamente no botão para finalizar e anexar.');
+
+    recorder.ondataavailable = (ev) => {
+      if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+    };
+
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((tr) => tr.stop());
+      activeRecorder = null;
+      btn.classList.remove('btn-danger');
+      if (span) span.textContent = 'Gravar áudio';
+
+      if (!chunks.length) return;
+      const finalMime = recorder.mimeType || supportedMime || 'audio/mp4';
+      const ext = finalMime.includes('mp4') || finalMime.includes('aac') ? 'm4a' : finalMime.includes('ogg') ? 'ogg' : 'webm';
+      const blob = new Blob(chunks, { type: finalMime });
+      const stamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+      const name = `Audio-${stamp}.${ext}`;
+
+      toast(`Salvando “${name}”…`);
+      try {
+        const r = await FileStore.put(blob, name);
+        ed.d.files.push({ ...r, name, type: finalMime, size: blob.size });
+        ed.newUploads.push(r.id);
+        refresh();
+        toast(`“${name}” gravado e anexado!`);
+      } catch {
+        toast('Não foi possível salvar o áudio gravado.', 'warn');
+      }
+    };
+
+    recorder.start();
+  } catch {
+    toast('Permissão de microfone negada ou indisponível.', 'warn');
+  }
 }
 
 async function uploadFiles(list: FileList, ed: any, refresh: () => void) {
@@ -1706,14 +1807,9 @@ async function uploadFiles(list: FileList, ed: any, refresh: () => void) {
   for (const orig of [...list]) {
     const name = orig.name;
     let file: Blob | File = orig;
-    const ok =
-      /^(image\/|application\/pdf|text\/plain|video\/(mp4|webm|quicktime))/.test(orig.type) ||
-      /\.(pdf|txt|jpe?g|png|webp|gif|heic|mp4|webm|mov)$/i.test(name);
-    if (!ok) {
-      toast(`“${name}”: anexe PDF, fotos, vídeos (MP4) ou TXT.`, 'warn');
-      continue;
-    }
-    if (orig.type.startsWith('image/') && orig.size > 1.8 * 1048576) {
+    const resolvedType = inferMimeType(name, orig.type);
+
+    if (resolvedType.startsWith('image/') && orig.size > 1.8 * 1048576 && !/\.svg$/i.test(name)) {
       try {
         file = await compressImage(orig);
       } catch {
@@ -1722,16 +1818,16 @@ async function uploadFiles(list: FileList, ed: any, refresh: () => void) {
     }
     const lim = FileStore.limit(m);
     if (file.size > lim) {
-      toast(`“${name}” passa de ${lim / 1048576} MB. Envie um arquivo menor.`, 'warn');
+      toast(`“${name}” passa de ${Math.round(lim / 1048576)} MB. Para vídeos longos, recomendamos colar o link do YouTube ou Drive.`, 'warn');
       continue;
     }
     toast(`Anexando “${name}”…`);
     try {
-      const r = await FileStore.put(file);
-      ed.d.files.push({ ...r, name, type: file.type || orig.type || '', size: file.size });
+      const r = await FileStore.put(file, name);
+      ed.d.files.push({ ...r, name, type: inferMimeType(name, file.type || resolvedType), size: file.size });
       ed.newUploads.push(r.id);
       refresh();
-      toast(`“${name}” anexado.`);
+      toast(`“${name}” anexado com sucesso.`);
     } catch {
       toast(`Não foi possível anexar “${name}”.`, 'warn');
     }
@@ -1900,47 +1996,207 @@ async function deleteFromEditor(ed: any, w: HTMLElement) {
   toast('Atividade apagada.');
 }
 
+function formatFileSize(n: number): string {
+  if (!n || n <= 0) return '';
+  return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+}
+
+export function openYouTubeViewer(url: string, label?: string) {
+  const ytId = extractYouTubeId(url);
+  if (!ytId) {
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+  const title = label || 'Vídeo do YouTube';
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(ytId)}?autoplay=1&rel=0&playsinline=1`;
+  showModal(
+    `<div class="viewer-h">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0">
+        <span class="k" style="background:rgba(225,29,72,0.15);color:#E11D48;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px">
+          ${ic('yt', 14)} YouTube
+        </span>
+        <b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(title)}</b>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <a class="btn btn-sm" href="${esc(url)}" target="_blank" rel="noopener">Abrir no YouTube ↗</a>
+        <button class="btn btn-sm" data-close>Fechar</button>
+      </div>
+    </div>
+    <div class="viewer-b" style="padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090b12">
+      <div style="width:100%;max-width:860px;aspect-ratio:16/9;border-radius:14px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.5);background:#000">
+        <iframe
+          src="${embedUrl}"
+          title="${esc(title)}"
+          style="width:100%;height:100%;border:0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>`,
+    null,
+    { cls: 'viewer' }
+  );
+}
+
 export function openViewer(f: any) {
   if (!f) return;
   let objUrl: string | null = null;
-  const isPdf = (f.type || '').includes('pdf') || /\.pdf$/i.test(f.name);
+  const cls = classifyFile(f);
+  const sizeStr = formatFileSize(f.size || 0);
+
   showModal(
-    `<div class="viewer-h"><b>${esc(f.name)}</b><div><button class="btn btn-sm" data-act="fdl">${ic(
-      'dl',
-      16
-    )} Baixar</button><button class="btn btn-sm" data-close>Fechar</button></div></div><div class="viewer-b" id="vb"><p class="muted">Abrindo…</p></div>`,
+    `<div class="viewer-h">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0">
+        <span class="k" style="background:color-mix(in srgb, ${cls.color} 15%, var(--soft));color:${cls.color};padding:3px 8px;border-radius:6px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;flex-shrink:0">
+          ${ic(cls.icon, 14)} ${esc(cls.badge)}
+        </span>
+        <b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</b>
+        ${sizeStr ? `<span class="muted small num" style="flex-shrink:0">(${sizeStr})</span>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-sm" data-act="fdl">${ic('dl', 16)} Baixar</button>
+        <button class="btn btn-sm" data-close>Fechar</button>
+      </div>
+    </div>
+    <div class="viewer-b" id="vb"><p class="muted">Carregando…</p></div>`,
     async (w) => {
       const box = $('#vb', w);
-      let blob: Blob;
-      try {
-        blob = await FileStore.blob(f);
-      } catch {
-        box.innerHTML = `<p class="muted">Não foi possível abrir este arquivo.</p>`;
+      let cachedBlob: Blob | null = await FileStore.localBlob(f.id);
+
+      const handleDownload = async () => {
+        try {
+          const b = cachedBlob || (await FileStore.blob(f));
+          cachedBlob = b;
+          triggerBrowserDownload(f.name, b);
+        } catch {
+          window.open(FileStore.streamUrl(f, true), '_blank', 'noopener');
+        }
+      };
+
+      w.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('[data-act=fdl]')) {
+          handleDownload();
+        }
+      });
+
+      // Áudio: reprodução imediata via Blob local ou HTTP Range Streaming (206 Partial Content)
+      if (cls.category === 'audio') {
+        const audioSrc = cachedBlob ? (objUrl = URL.createObjectURL(cachedBlob)) : FileStore.streamUrl(f);
+        box.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:36px 20px;width:100%;max-width:520px;margin:0 auto;text-align:center">
+          <div style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,#8B5CF6,#2A4CDB);color:#fff;display:grid;place-items:center;box-shadow:0 12px 28px rgba(139,92,246,0.35)">
+            ${ic('audio', 34)}
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:16px;color:var(--ink);word-break:break-word">${esc(f.name)}</div>
+            <div class="muted small" style="margin-top:4px">Player de Áudio Integrado${sizeStr ? ` · ${sizeStr}` : ''}</div>
+          </div>
+          <audio src="${audioSrc}" controls autoplay preload="metadata" style="width:100%;height:44px;border-radius:10px"></audio>
+        </div>`;
+        const audioEl = box.querySelector('audio');
+        if (audioEl && !cachedBlob) {
+          audioEl.addEventListener('error', async () => {
+            try {
+              cachedBlob = await FileStore.blob(f);
+              objUrl = URL.createObjectURL(cachedBlob);
+              audioEl.src = objUrl;
+              audioEl.play().catch(() => {});
+            } catch {}
+          }, { once: true });
+        }
         return;
       }
-      w.addEventListener('click', (e) => {
-        if (!(e.target as HTMLElement).closest('[data-act=fdl]')) return;
-        triggerBrowserDownload(f.name, blob);
-      });
-      const t = blob.type || f.type || '';
+
+      // Vídeo: reprodução leve via Blob local ou HTTP Range Streaming (206 Partial Content)
+      if (cls.category === 'video') {
+        const videoSrc = cachedBlob ? (objUrl = URL.createObjectURL(cachedBlob)) : FileStore.streamUrl(f);
+        box.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:8px">
+          <video src="${videoSrc}" controls autoplay playsinline preload="metadata" style="max-width:100%;max-height:72vh;border-radius:12px;background:#000;box-shadow:0 14px 36px rgba(0,0,0,0.4)"></video>
+        </div>`;
+        const videoEl = box.querySelector('video');
+        if (videoEl && !cachedBlob) {
+          videoEl.addEventListener('error', async () => {
+            try {
+              cachedBlob = await FileStore.blob(f);
+              objUrl = URL.createObjectURL(cachedBlob);
+              videoEl.src = objUrl;
+              videoEl.play().catch(() => {});
+            } catch {}
+          }, { once: true });
+        }
+        return;
+      }
+
+      // Para PDF, fotos, textos, planilhas CSV e documentos Word/Excel
+      let blob: Blob;
+      try {
+        blob = cachedBlob || (await FileStore.blob(f));
+        cachedBlob = blob;
+      } catch {
+        box.innerHTML = `<p class="muted">Não foi possível carregar este arquivo.</p>`;
+        return;
+      }
+
       objUrl = URL.createObjectURL(blob);
-      if (t.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(f.name)) {
-        box.innerHTML = `<img src="${objUrl}" alt="${esc(f.name)}">`;
-      } else if (t.startsWith('video/')) {
-        box.innerHTML = `<video src="${objUrl}" controls playsinline></video>`;
-      } else if (isPdf) {
+
+      if (cls.category === 'image') {
+        box.innerHTML = `<img src="${objUrl}" alt="${esc(f.name)}" style="max-width:100%;max-height:75vh;border-radius:10px;object-fit:contain">`;
+      } else if (cls.category === 'pdf') {
         try {
           await renderPdf(blob, box);
         } catch {
-          box.innerHTML = `<iframe src="${objUrl}" title="${esc(f.name)}"></iframe>`;
+          box.innerHTML = `<iframe src="${objUrl}" title="${esc(f.name)}" style="width:100%;height:75vh;border:0"></iframe>`;
         }
-      } else if (t.startsWith('text/') || /\.txt$/i.test(f.name)) {
+      } else if (/\.csv$/i.test(f.name)) {
+        try {
+          const text = await blob.text();
+          const lines = text.split(/\r?\n/).filter((l) => l.trim()).slice(0, 100);
+          const sep = lines[0]?.includes(';') ? ';' : ',';
+          const tableRows = lines
+            .map((line, rIdx) => {
+              const cols = line.split(sep);
+              const tag = rIdx === 0 ? 'th' : 'td';
+              return `<tr>${cols.map((c) => `<${tag} style="padding:7px 10px;border:1px solid var(--line);text-align:left;font-size:13px">${esc(c.replace(/^"|"$/g, ''))}</${tag}>`).join('')}</tr>`;
+            })
+            .join('');
+          box.innerHTML = `<div style="width:100%;padding:12px;overflow:auto">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+              <span class="muted small">Pré-visualização da planilha CSV (${lines.length} linhas exibidas)</span>
+              <button type="button" class="btn btn-sm btn-primary" data-act="fdl">${ic('dl', 15)} Abrir no Excel / Numbers</button>
+            </div>
+            <table style="width:100%;border-collapse:collapse;background:var(--surface);border-radius:8px;overflow:hidden">${tableRows}</table>
+          </div>`;
+        } catch {
+          box.innerHTML = `<p class="muted">Use o botão Baixar para abrir a planilha no Excel.</p>`;
+        }
+      } else if (cls.category === 'text') {
         const pre = document.createElement('pre');
+        pre.style.cssText = 'width:100%;padding:16px;margin:0;white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.5';
         pre.textContent = await blob.text();
         box.innerHTML = '';
         box.appendChild(pre);
       } else {
-        box.innerHTML = '<p class="muted">Não há pré-visualização para este tipo de arquivo. Use o botão Baixar.</p>';
+        const appHint =
+          cls.category === 'word'
+            ? 'Microsoft Word, Apple Pages ou Editor de Documentos'
+            : cls.category === 'excel'
+            ? 'Microsoft Excel, Apple Numbers ou Planilhas'
+            : cls.category === 'ppt'
+            ? 'PowerPoint, Apple Keynote ou Apresentações'
+            : 'aplicativo padrão do seu dispositivo';
+        box.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;text-align:center;max-width:460px;margin:0 auto">
+          <div style="width:68px;height:68px;border-radius:20px;background:color-mix(in srgb, ${cls.color} 16%, var(--soft));color:${cls.color};display:grid;place-items:center;border:1px solid color-mix(in srgb, ${cls.color} 35%, transparent)">
+            ${ic(cls.icon, 32)}
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:16px;color:var(--ink);word-break:break-word">${esc(f.name)}</div>
+            <div class="muted small" style="margin-top:6px;line-height:1.45">
+              ${esc(cls.label)}${sizeStr ? ` (${sizeStr})` : ''}. Clique abaixo para abrir diretamente no <b>${appHint}</b> do seu MacBook, iPad, iPhone ou computador.
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" data-act="fdl" style="padding:10px 18px;font-size:14px">
+            ${ic('dl', 17)} Abrir / Baixar ${esc(cls.badge)}
+          </button>
+        </div>`;
       }
     },
     {
@@ -1949,6 +2205,115 @@ export function openViewer(f: any) {
         if (objUrl) URL.revokeObjectURL(objUrl);
       }
     }
+  );
+}
+
+export function openActivityAttachment(key: string, filterKind = 'all') {
+  const o = findOcc(key);
+  const it = o ? o.item : S.items.get(String(key).split('@')[0]);
+  if (!it) return;
+
+  const files: any[] = it.files || [];
+  const links: any[] = it.links || [];
+
+  if (filterKind === 'yt') {
+    const ytLinks = links.filter((l) => isYouTubeUrl(l.url));
+    if (ytLinks.length === 1) {
+      openYouTubeViewer(ytLinks[0].url, ytLinks[0].label || it.title);
+      return;
+    }
+  } else if (filterKind === 'link') {
+    const webLinks = links.filter((l) => !isYouTubeUrl(l.url));
+    if (webLinks.length === 1) {
+      window.open(webLinks[0].url, '_blank', 'noopener');
+      return;
+    }
+  } else if (filterKind !== 'all') {
+    const matched = files.filter((f) => {
+      const c = classifyFile(f).category;
+      if (filterKind === 'doc') return c === 'word' || c === 'excel' || c === 'ppt' || c === 'text' || c === 'file';
+      return c === filterKind;
+    });
+    if (matched.length === 1) {
+      openViewer(matched[0]);
+      return;
+    }
+  }
+
+  // Se houver apenas 1 anexo no total na atividade, abre direto
+  if (files.length === 1 && links.length === 0) {
+    openViewer(files[0]);
+    return;
+  }
+  if (files.length === 0 && links.length === 1) {
+    if (isYouTubeUrl(links[0].url)) openYouTubeViewer(links[0].url, links[0].label || it.title);
+    else window.open(links[0].url, '_blank', 'noopener');
+    return;
+  }
+
+  // Modal rápido de seleção de anexos da atividade
+  const fileRows = files
+    .map((f, i) => {
+      const cls = classifyFile(f);
+      const act = cls.category === 'audio' ? '▶ Ouvir' : cls.category === 'video' ? '▶ Assistir' : 'Abrir';
+      return `<div class="att" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
+        <span class="k" style="background:color-mix(in srgb, ${cls.color} 15%, var(--soft));color:${cls.color};display:inline-flex;align-items:center;gap:4px">
+          ${ic(cls.icon, 13)} ${esc(cls.badge)}
+        </span>
+        <span class="nm" style="cursor:pointer;font-weight:600" data-open-f="${i}">${esc(f.name)}</span>
+        <span class="muted small num">${formatFileSize(f.size || 0)}</span>
+        <button type="button" class="btn btn-sm btn-primary" data-open-f="${i}">${act}</button>
+      </div>`;
+    })
+    .join('');
+
+  const linkRows = links
+    .map((l, i) => {
+      const yt = isYouTubeUrl(l.url);
+      return `<div class="att" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
+        <span class="k" style="${yt ? 'background:rgba(225,29,72,0.15);color:#E11D48' : ''};display:inline-flex;align-items:center;gap:4px">
+          ${yt ? `${ic('yt', 14)} YouTube` : 'Link'}
+        </span>
+        ${
+          yt
+            ? `<span class="nm" style="cursor:pointer;font-weight:600" data-open-yt="${i}">${esc(l.label || 'Vídeo do YouTube')}</span>
+               <button type="button" class="btn btn-sm btn-primary" data-open-yt="${i}">▶ Assistir</button>`
+            : `<a class="nm" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || l.url)}</a>
+               <a class="btn btn-sm" href="${esc(l.url)}" target="_blank" rel="noopener">Abrir ↗</a>`
+        }
+      </div>`;
+    })
+    .join('');
+
+  showModal(
+    `<div class="m-h">
+      <span class="dot" style="--c:${safeColor(cat(it.category).color)};width:14px;height:14px"></span>
+      <h2>Anexos de “${esc(it.title)}”</h2>
+    </div>
+    <div class="m-b" style="display:flex;flex-direction:column;gap:8px">
+      ${fileRows}${linkRows}
+    </div>
+    <div class="m-f">
+      <button type="button" class="btn btn-sm" data-act="edit-full">Editar atividade</button>
+      <span class="sp"></span>
+      <button type="button" class="btn" data-close>Fechar</button>
+    </div>`,
+    (w) => {
+      w.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest('[data-open-f], [data-open-yt], [data-act="edit-full"]') as HTMLElement | null;
+        if (!b) return;
+        if (b.dataset.openF !== undefined) {
+          openViewer(files[+b.dataset.openF]);
+        } else if (b.dataset.openYt !== undefined) {
+          const ln = links[+b.dataset.openYt];
+          if (ln) openYouTubeViewer(ln.url, ln.label || it.title);
+        } else if (b.dataset.act === 'edit-full') {
+          closeModal(w);
+          openEditor(key);
+        }
+      });
+    },
+    { cls: 'sm' }
   );
 }
 
