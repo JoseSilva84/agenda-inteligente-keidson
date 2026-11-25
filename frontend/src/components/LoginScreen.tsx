@@ -396,9 +396,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
 
           {/* Apple Devices Footer Badge */}
-          <div className="login-device-note" style={{ color: 'var(--muted)' }}>
+          {/* <div className="login-device-note" style={{ color: 'var(--muted)' }}>
             <span>Ecossistema Apple · MacBook · iPad · iPhone</span>
-          </div>
+          </div> */}
         </motion.div>
 
         {/* Bottom Info - Copyright Pr. Keidson Rodrigues */}
