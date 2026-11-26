@@ -1097,6 +1097,7 @@ export function openEditor(key?: string | null, preset: any = {}) {
   const o = key ? findOcc(key) : null;
   if (key && !o) return;
   const base = o ? clone(o.item) : blankItem(preset);
+  const initTarget = base.goal && typeof base.goal === 'object' ? Math.max(1, +base.goal.target || 5) : 5;
   const d = {
     title: base.title || '',
     date: o ? o.date : base.date,
@@ -1114,8 +1115,8 @@ export function openEditor(key?: string | null, preset: any = {}) {
     goal: base.goal && typeof base.goal === 'object'
       ? {
           enabled: !!base.goal.enabled,
-          target: Math.max(1, +base.goal.target || 5),
-          done: Math.max(0, Math.min(Math.max(1, +base.goal.target || 5), +base.goal.done || 0))
+          target: initTarget,
+          done: Math.max(0, Math.min(initTarget, +base.goal.done || 0))
         }
       : { enabled: false, target: 5, done: 0 },
     subtasks: clone(base.subtasks || []),
@@ -1123,7 +1124,17 @@ export function openEditor(key?: string | null, preset: any = {}) {
     files: clone(base.files || []),
     scope: 'one'
   };
-  const ed = { o, base, rec: !!o && o.rec, d, newUploads: [] as string[], removed: [] as string[], saved: false, pickMonth: '' };
+  const ed = {
+    o,
+    base,
+    rec: !!o && o.rec,
+    d,
+    goalCustom: !GOAL_CHOICES.includes(initTarget),
+    newUploads: [] as string[],
+    removed: [] as string[],
+    saved: false,
+    pickMonth: ''
+  };
   showModal(
     `<form id="edform" novalidate>${editorInner(ed)}</form>`,
     (w) => bindEditor(w, ed),
@@ -1293,12 +1304,20 @@ const isYT = (u?: string) => isYouTubeUrl(u);
 
 const GOAL_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 20, 21, 25, 30, 40, 42, 50, 60, 90, 100];
 
-function goalOptionsHTML(cur: number) {
+function goalOptionsHTML(cur: number, isCustom: boolean) {
   const val = Math.max(1, +cur || 5);
-  const list = GOAL_CHOICES.includes(val) ? GOAL_CHOICES : [...GOAL_CHOICES, val].sort((a, b) => a - b);
-  return list
-    .map((n) => `<option value="${n}" ${n === val ? 'selected' : ''}>${n} ${plural(n, 'vez até terminar', 'vezes até terminar')}</option>`)
-    .join('');
+  const customSelected = isCustom || !GOAL_CHOICES.includes(val);
+  return (
+    GOAL_CHOICES.map(
+      (n) =>
+        `<option value="${n}" ${!customSelected && n === val ? 'selected' : ''}>${n} ${plural(
+          n,
+          'vez até terminar',
+          'vezes até terminar'
+        )}</option>`
+    ).join('') +
+    `<option value="other" ${customSelected ? 'selected' : ''}>Outro (digitar quantidade em número…)</option>`
+  );
 }
 
 function goalHTML(ed: any) {
@@ -1311,6 +1330,7 @@ function goalHTML(ed: any) {
   const pct = Math.min(100, Math.round((done / target) * 100));
   const titleSample = (ed.d.title || '').trim() || 'Estudar o livro de Jó';
   const dis = ro ? 'disabled' : '';
+  const isCustom = !!ed.goalCustom || !GOAL_CHOICES.includes(target);
 
   return `<div class="goal-bar">
       <button type="button" class="btn btn-sm goal-toggle-btn ${active ? 'is-active' : ''}" data-act="toggle-goal" aria-pressed="${active}" ${dis}>
@@ -1333,11 +1353,30 @@ function goalHTML(ed: any) {
               <label class="field" for="ed-goal-target" style="margin:0;flex:1 1 240px">
                 <span>Quantidade de vezes que deseja repetir “${esc(titleSample)}” até terminar</span>
                 <select id="ed-goal-target" class="inp" ${dis}>
-                  ${goalOptionsHTML(target)}
+                  ${goalOptionsHTML(target, isCustom)}
                 </select>
               </label>
+              ${
+                isCustom
+                  ? `<label class="field" for="ed-goal-custom" style="margin:0;flex:0 1 200px">
+                      <span>Qual a quantidade (em número)?</span>
+                      <input
+                        type="number"
+                        id="ed-goal-custom"
+                        class="inp num"
+                        min="1"
+                        max="9999"
+                        step="1"
+                        inputmode="numeric"
+                        placeholder="Ex.: 35"
+                        value="${target}"
+                        ${dis}
+                      >
+                    </label>`
+                  : ''
+              }
             </div>
-            <div class="goal-stats-grid">
+            <div class="goal-stats-grid" id="ed-goal-stats">
               <div class="goal-stat-card is-done">
                 <span class="goal-stat-lbl">Já feitas</span>
                 <b class="goal-stat-val num">${done}</b>
@@ -1531,10 +1570,15 @@ function bindEditor(w: HTMLElement, ed: any) {
     const t = e.target as HTMLElement;
     if (
       e.key === 'Enter' &&
-      (t.id === 'sub-new' || t.dataset.subText !== undefined || t.id === 'ln-url' || t.id === 'ln-label')
+      (t.id === 'sub-new' ||
+        t.id === 'ed-goal-custom' ||
+        t.dataset.subText !== undefined ||
+        t.id === 'ln-url' ||
+        t.id === 'ln-label')
     ) {
       e.preventDefault();
       if (t.id === 'sub-new') addSub();
+      else if (t.id === 'ed-goal-custom') (t as HTMLInputElement).blur();
       else if (t.id.startsWith('ln-')) $('[data-act=addlink]', w).click();
     }
   });
@@ -1654,6 +1698,50 @@ function bindEditor(w: HTMLElement, ed: any) {
       if (x) x.text = t.value;
     } else if (t.id === 'ed-until') d.recur.until = t.value;
     else if (t.id === 'ed-deadline') d.deadline = t.value;
+    else if (t.id === 'ed-goal-custom') {
+      const raw = parseInt(t.value, 10);
+      if (!isNaN(raw) && raw >= 1) {
+        const targetVal = Math.min(9999, raw);
+        const doneVal = Math.min(targetVal, Math.max(0, +d.goal?.done || 0));
+        d.goal = { enabled: true, target: targetVal, done: doneVal };
+        const rem = Math.max(0, targetVal - doneVal);
+        const pct = Math.min(100, Math.round((doneVal / targetVal) * 100));
+        const pill = $('.goal-pill-mini', w);
+        if (pill) pill.textContent = `${doneVal}/${targetVal}`;
+        const hint = $('.goal-hint', w);
+        if (hint) {
+          hint.textContent =
+            doneVal >= targetVal
+              ? '🎉 Meta concluída! Todas as repetições foram cumpridas.'
+              : `Meta ativa: ${doneVal} ${plural(doneVal, 'feita', 'feitas')} · ${plural(rem, 'falta', 'faltam')} ${rem} para concluir`;
+        }
+        const stats = $('#ed-goal-stats', w);
+        if (stats) {
+          stats.innerHTML = `<div class="goal-stat-card is-done">
+              <span class="goal-stat-lbl">Já feitas</span>
+              <b class="goal-stat-val num">${doneVal}</b>
+              <small>${plural(doneVal, 'vez cumprida', 'vezes cumpridas')}</small>
+            </div>
+            <div class="goal-stat-card is-rem">
+              <span class="goal-stat-lbl">Faltam fazer</span>
+              <b class="goal-stat-val num">${rem}</b>
+              <small>${rem === 0 ? 'meta 100% atingida!' : plural(rem, 'vez restante', 'vezes restantes')}</small>
+            </div>
+            <div class="goal-stat-card is-total">
+              <span class="goal-stat-lbl">Total da meta</span>
+              <b class="goal-stat-val num">${doneVal}/${targetVal}</b>
+              <small>${pct}% concluído</small>
+            </div>`;
+        }
+        const fill = $('.goal-progress-fill', w) as HTMLElement | null;
+        if (fill) {
+          fill.style.width = `${pct}%`;
+          fill.classList.toggle('is-complete', doneVal >= targetVal);
+        }
+        const incBtn = $('[data-act="goal-inc"]', w) as HTMLButtonElement | null;
+        if (incBtn) incBtn.disabled = doneVal >= targetVal;
+      }
+    }
   });
   f.addEventListener('change', (e: Event) => {
     const t = e.target as HTMLInputElement;
@@ -1699,7 +1787,27 @@ function bindEditor(w: HTMLElement, ed: any) {
       }
     } else if (t.id === 'ed-auto') d.autoResched = t.checked;
     else if (t.id === 'ed-goal-target') {
-      const targetVal = Math.max(1, +t.value || 1);
+      if (t.value === 'other') {
+        ed.goalCustom = true;
+        refreshGoal();
+        const customInp = $('#ed-goal-custom', w) as HTMLInputElement | null;
+        if (customInp) {
+          customInp.focus();
+          customInp.select();
+        }
+      } else {
+        ed.goalCustom = false;
+        const targetVal = Math.max(1, +t.value || 1);
+        d.goal = {
+          enabled: true,
+          target: targetVal,
+          done: Math.min(targetVal, Math.max(0, +d.goal?.done || 0))
+        };
+        refreshGoal();
+      }
+    } else if (t.id === 'ed-goal-custom') {
+      const targetVal = Math.min(9999, Math.max(1, parseInt(t.value, 10) || 1));
+      ed.goalCustom = true;
       d.goal = {
         enabled: true,
         target: targetVal,
