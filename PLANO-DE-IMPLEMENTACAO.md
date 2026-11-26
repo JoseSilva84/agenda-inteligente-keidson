@@ -19,6 +19,8 @@ Plataforma web progressiva (**PWA**) de planejamento pessoal e profissional, ins
   - Edição inline do título com 1 clique; modal completo com clique direito (MacBook) ou toque com dois dedos (iPhone/iPad).
   - Mesclagem horizontal de dias consecutivos (`g-span`) arrastando a borda lateral direita (`.rzx`).
   - Subtarefas numeradas (`1/5`, `2/5`…) com data, hora e duração próprias renderizadas diretamente na grade.
+  - **Meta de Repetições da Atividade (`goal`)**: Botão **Meta** posicionado entre **Subtarefas** e **Anotações** no editor de atividade. Ao ser acionado, exibe um seletor (`<select>`) com a quantidade de vezes que o usuário deseja cumprir aquela atividade até concluí-la (ex.: *"Estudar o livro de Jó"* por 7, 10, 21, 30 vezes…) e um painel contador em tempo real com **Já feitas**, **Faltam fazer**, **Progresso (`feitas/total` e `%`)**, barra de progresso visual, controles rápidos (`+1 vez feita`, `−1 feita`, `Zerar`) e incremento automático ao concluir a atividade.
+  - **Exibição Limpa de Ícones na Grade**: Os cartões de atividades na grade exibem exclusivamente os ícones/selos de anexos e elementos vinculados (PDF, Imagem/Foto, Áudio, Vídeo, Word, Excel, Link, YouTube, Subtarefas e Meta), sem poluição visual do ícone de recado/anotação rápida.
   - Períodos de **Viagem** sombreados na agenda (`trip`), permitindo agendar compromissos por cima.
   - Atalhos nativos macOS/iPadOS: Desfazer/Refazer (`⌘+Z` / `⌘+Shift+Z`) e Copiar/Colar atividades (`⌘+C` / `⌘+V`).
 - **Adaptação PWA Apple**:
@@ -49,8 +51,8 @@ Plataforma web progressiva (**PWA**) de planejamento pessoal e profissional, ins
 | Módulo / Aba | Funcionalidades Entregues | Status / Fase |
 |---|---|---|
 | **Login & Permissão (JWT)** | Tela de bloqueio/permissão antes da agenda, login, registro, token JWT via Axios, toggle Dark/Light | Fase 1 (Entregue) |
-| **1. Agenda (`#agenda`)** | Visualizações Dia, Semana, Mês, Ano (heatmap) e Lista; drag & drop; redimensionamento vertical e horizontal (multi-dias); subtarefas `1/N` na grade; sombreamento de viagens; copiar/colar (`⌘+C`/`⌘+V`); desfazer/refazer (`⌘+Z`) | Fase 1 (Entregue) |
-| **Anexos Multimídia** | Upload e visualização interna de PDF (PDF.js), imagens (com compressão automática), vídeos (MP4/WebM/QuickTime com `playsinline`), TXT e links (com detecção de YouTube) | Fase 1 (Entregue) |
+| **1. Agenda (`#agenda`)** | Visualizações Dia, Semana, Mês, Ano (heatmap) e Lista; drag & drop; redimensionamento vertical e horizontal (multi-dias); subtarefas `1/N` na grade; **Meta de repetições (`feitas/total` e contador de quantas faltam)**; sombreamento de viagens; copiar/colar (`⌘+C`/`⌘+V`); desfazer/refazer (`⌘+Z`) | Fase 1 (Entregue) |
+| **Anexos Multimídia** | Upload e visualização interna de PDF (PDF.js), imagens (com compressão automática), áudio/gravação de voz, vídeos (MP4/WebM/QuickTime com `playsinline`), Word, Excel, TXT e links (com detecção e player de YouTube); exibição exclusiva dos ícones de anexos no cartão da agenda (sem ícone de recado) | Fase 1 (Entregue) |
 | **2. Pendências (`#pendencias`)** | Detecção automática de atividades não concluídas; sugestão inteligente de horário livre (`findSlot`) respeitando prioridade, prazo fixo, horário útil e viagens; remarcação individual ou em lote com preservação de histórico | Fase 1 (Entregue) |
 | **3. Resumo (`#resumo`)** | KPIs semanais (Programadas, Concluídas, Pendentes, Canceladas, Taxa %); gráfico SVG de produtividade diária; barras de horas por categoria; exportação em PDF (`jsPDF`), cópia de texto e envio via WhatsApp | Fase 1 (Entregue) |
 | **4. Assistente (`#assistente`)** | Chat conversacional integrado ao backend (`/api/assistant/chat`) que consulta atividades, busca horários livres, resume produtividade e gera cartões interativos de confirmação (`Confirmar` / `Descartar`) antes de alterar a agenda | Fase 1/2 (Entregue) |
@@ -75,7 +77,7 @@ Monólito modular em TypeScript preparado para deploy direto em **VPS com painel
 ### Modelo de Dados no Prisma (`schema.prisma`)
 - `User`: `id`, `name`, `email`, `passwordHash`, `role`, `theme` (`dark` | `light` | `system`), `createdAt`, `updatedAt`.
 - `UserSettings`: `userId`, `mode`, `workStart`, `workEnd`, `workDays`, `categories`, `specialCats`.
-- `Activity`: `id`, `userId`, `title`, `date`, `start`, `end`, `status`, `category`, `priority`, `recur`, `reminder`, `fixed`, `deadline`, `autoResched`, `kept`, `span`, `notes`, `subtasks`, `links`, `files`, `history`, `overrides`, `origin`, `rescheduledCount`.
+- `Activity`: `id`, `userId`, `title`, `date`, `start`, `end`, `status`, `category`, `priority`, `recur`, `reminder`, `fixed`, `deadline`, `autoResched`, `kept`, `span`, `notes`, `goal` (`{ enabled, target, done }`), `subtasks`, `links`, `files`, `history`, `overrides`, `origin`, `rescheduledCount`.
 - `Travel`: `id`, `userId`, `title`, `date`, `start`, `endDate`, `end`, `notes`.
 - `Person`: `id`, `userId`, `type` (`aniversario` | `profissional`), `name`, `day`, `month`, `whatsapp`, `role`.
 - `Notification`: `id`, `userId`, `at`, `title`, `body`, `type`, `read`.

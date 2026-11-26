@@ -482,7 +482,8 @@ const ICON = {
   clip:'<path d="m21 11.5-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/>',
   rep:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
   wa:'<path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.3z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.6-2-1-1 .8a5 5 0 0 1-2.2-2.2l.8-1-1-2z"/>',
-  dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
+  dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>'
 };
 const ic = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s?` style="width:${s}px;height:${s}px"`:''}>${ICON[n]}</svg>`;
 const $ = (s, r=document) => r.querySelector(s);
@@ -1157,10 +1158,12 @@ function layoutDay(list){
   flush(); return res;
 }
 function markIcons(it){
-  const notes = !!String(it.notes || '').trim(), subs = it.subtasks || [], done = subs.filter(x => x.done).length;
+  const subs = it.subtasks || [], done = subs.filter(x => x.done).length;
   const nf = (it.files || []).length, nl = (it.links || []).length, na = nf + nl;
   const attLabel = [nf ? `${nf} ${plural(nf,'arquivo','arquivos')}` : '', nl ? `${nl} ${plural(nl,'link','links')}` : ''].filter(Boolean).join(' e ');
-  return (na ? `<span class="ev-ic" title="Anexos: ${attLabel}" aria-label="Anexos: ${attLabel}">${ic('clip')}${na > 1 ? na : ''}</span>` : '') + (notes ? `<span class="ev-ic" title="Tem anotações" aria-label="Tem anotações">${ic('note')}</span>` : '') + (subs.length ? `<span class="ev-ic" title="Subtarefas: ${done} de ${subs.length} feitas" aria-label="Subtarefas: ${done} de ${subs.length} feitas">${ic('check')}${done}/${subs.length}</span>` : '');
+  const g = it.goal, hasGoal = !!(g && g.enabled && +g.target > 0);
+  const gt = hasGoal ? Math.max(1, +g.target || 1) : 0, gd = hasGoal ? Math.max(0, Math.min(gt, +g.done || 0)) : 0;
+  return (na ? `<span class="ev-ic" title="Anexos: ${attLabel}" aria-label="Anexos: ${attLabel}">${ic('clip')}${na > 1 ? na : ''}</span>` : '') + (hasGoal ? `<span class="ev-ic" title="Meta: ${gd}/${gt} feitas" aria-label="Meta: ${gd}/${gt} feitas">${ic('target')}${gd}/${gt}</span>` : '') + (subs.length ? `<span class="ev-ic" title="Subtarefas: ${done} de ${subs.length} feitas" aria-label="Subtarefas: ${done} de ${subs.length} feitas">${ic('check')}${done}/${subs.length}</span>` : '');
 }
 function evHTML(o, conflict, run){
   if (o.isSub) {
@@ -1601,7 +1604,7 @@ function openEditor(key, preset = {}){
   const base = o ? clone(o.item) : blankItem(preset);
   const d = {title:base.title || '', date:o ? o.date : base.date, start:o ? o.start : base.start, end:o ? o.end : base.end, status:o ? o.status : base.status,
     category:base.category, priority:base.priority || 'media', recur:clone(base.recur || {freq:'none'}), reminder:+base.reminder || 0, fixed:!!base.fixed,
-    deadline:base.deadline || '', autoResched:base.autoResched !== false, notes:base.notes || '', subtasks:clone(base.subtasks || []), links:clone(base.links || []), files:clone(base.files || []), scope:'one'};
+    deadline:base.deadline || '', autoResched:base.autoResched !== false, notes:base.notes || '', goal:base.goal ? clone(base.goal) : {enabled:false, target:5, done:0}, subtasks:clone(base.subtasks || []), links:clone(base.links || []), files:clone(base.files || []), scope:'one'};
   const ed = {o, base, rec:!!o && o.rec, d, newUploads:[], removed:[], saved:false};
   showModal(`<form id="edform" novalidate>${editorInner(ed)}</form>`, w => bindEditor(w, ed), {onClose:() => { if (!ed.saved) ed.newUploads.forEach(maybeDeleteAsset); }});
 }
@@ -1653,6 +1656,7 @@ function editorInner(ed){
     </div>
     <label class="check"><input type="checkbox" id="ed-auto" ${d.autoResched ? 'checked' : ''}> Se não for concluída, remarcar para a próxima semana</label>
     <div class="sect"><h3>Subtarefas</h3><div class="subs" id="ed-subs"></div>${ro ? '' : `<div class="addlink" style="grid-template-columns:1fr auto"><input class="inp" id="sub-new" placeholder="Nova subtarefa (Enter adiciona)" aria-label="Nova subtarefa"><button type="button" class="btn btn-sm" data-act="addsub">Adicionar</button></div>`}</div>
+    <div class="sect" id="ed-goal-sect">${goalHTML(ed)}</div>
     <label class="field" for="ed-notes">Anotações<textarea id="ed-notes" rows="3" placeholder="Pauta, detalhes, o que levar…">${esc(d.notes)}</textarea></label>
     <div class="sect"><h3>Arquivos e links</h3><div id="ed-att"></div>
       ${!ro && FileStore.mode() ? `<div class="actions"><label class="btn btn-sm">${ic('clip',16)} Anexar PDF<input type="file" id="ed-file" multiple hidden accept="application/pdf,.pdf,text/plain,.txt"></label><label class="btn btn-sm">${ic('clip',16)} Anexar fotos<input type="file" id="ed-file2" multiple hidden accept="image/*"></label>${FileStore.mode() !== 'db' ? `<label class="btn btn-sm">${ic('clip',16)} Anexar vídeo<input type="file" id="ed-file3" multiple hidden accept="video/mp4,video/webm,video/quicktime"></label>` : ''}</div><p class="note">${FileStore.mode() === 'db' ? 'PDF e fotos até 10 MB cada (fotos grandes são reduzidas). Para vídeos, cole o link do YouTube abaixo.' : FileStore.mode() === 'idb' ? 'PDF, fotos e vídeos até 20 MB cada. Ficam guardados neste aparelho.' : 'PDF, fotos e vídeos até 20 MB cada.'}</p>` : ''}
@@ -1664,6 +1668,13 @@ function editorInner(ed){
   <div class="m-f">${!isNew && !ro ? `<button type="button" class="btn btn-danger btn-sm" data-act="del">Apagar</button>` : ''}${!isNew ? `<button type="button" class="btn btn-sm" data-act="copy-ed">${ic('copy',16)} Copiar</button>` : ''}${share}<span class="sp"></span><button type="button" class="btn" data-close>Cancelar</button>${ro ? '' : `<button type="submit" class="btn btn-primary">${isNew ? 'Criar atividade' : 'Salvar'}</button>`}</div>`;
 }
 const isYT = u => /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(u || '');
+const GOAL_CHOICES = [1,2,3,4,5,6,7,8,9,10,12,14,15,20,21,25,30,40,42,50,60,90,100];
+function goalHTML(ed){
+  const ro = S.readOnly, g = ed.d.goal || {enabled:false, target:5, done:0}, active = !!g.enabled;
+  const target = Math.max(1, +g.target || 5), done = Math.max(0, Math.min(target, +g.done || 0)), rem = Math.max(0, target - done);
+  const opts = (GOAL_CHOICES.includes(target) ? GOAL_CHOICES : [...GOAL_CHOICES, target].sort((a,b)=>a-b)).map(n => `<option value="${n}" ${n === target ? 'selected' : ''}>${n} ${plural(n,'vez até terminar','vezes até terminar')}</option>`).join('');
+  return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-sm ${active ? 'btn-primary' : ''}" data-act="toggle-goal" aria-pressed="${active}" ${ro ? 'disabled' : ''}>${ic('target',15)} Meta ${active ? `(${done}/${target})` : ''}</button><span class="note" style="margin:0">${active ? `Já feitas: ${done} · Faltam: ${rem}` : 'Defina quantas vezes deverá cumprir esta atividade até terminar.'}</span></div>${active ? `<div style="display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)"><label class="field" for="ed-goal-target">Quantidade de vezes para repetir até terminar<select id="ed-goal-target" class="inp" ${ro ? 'disabled' : ''}>${opts}</select></label><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="pill">Já feitas: <b>${done}</b></span><span class="pill">Faltam: <b>${rem}</b></span><span class="pill">Total: <b>${done}/${target}</b></span>${ro ? '' : `<button type="button" class="btn btn-sm" data-act="goal-dec" ${done<=0?'disabled':''}>-1 feita</button><button type="button" class="btn btn-sm btn-primary" data-act="goal-inc" ${done>=target?'disabled':''}>+1 vez feita</button>`}</div></div>` : ''}`;
+}
 function subsHTML(ed){
   const ro = S.readOnly, subs = ed.d.subtasks, n = subs.length, dis = ro ? 'disabled' : '';
   if (!n) return '<p class="note" style="margin:0">Divida a atividade em passos menores. Coloque dia, hora e tempo em cada um para ele aparecer na agenda como 1/5, 2/5…</p>';
@@ -1686,6 +1697,7 @@ function bindEditor(w, ed){
     box.innerHTML = c.length ? `<div class="info bad">Conflito de horário com ${c.map(x => `“${esc(x.item.title)}” (${fmtH(x.start)}–${fmtH(x.end)})`).join(', ')}.</div>` : '';
   };
   const refreshSubs = () => { $('#ed-subs', w).innerHTML = subsHTML(ed); };
+  const refreshGoal = () => { const b = $('#ed-goal-sect', w); if (b) b.innerHTML = goalHTML(ed); };
   refreshSubs();
   const addSub = () => { const inp = $('#sub-new', w); const v = inp.value.trim(); if (!v) return; d.subtasks.push({id:uid(), text:v.slice(0, 160), done:false, date:'', start:'', dur:30}); inp.value = ''; refreshSubs(); inp.focus(); };
   f.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'sub-new' || e.target.dataset.subText !== undefined || e.target.id === 'ln-url' || e.target.id === 'ln-label')) { e.preventDefault(); if (e.target.id === 'sub-new') addSub(); else if (e.target.id.startsWith('ln-')) $('[data-act=addlink]', w).click(); } });
@@ -1739,6 +1751,7 @@ function bindEditor(w, ed){
     else if (t.dataset.wday !== undefined) { const g = +t.dataset.wday; const s = new Set(d.recur.days || []); t.checked ? s.add(g) : s.delete(g); d.recur.days = [...s]; }
     else if (t.id === 'ed-fixed') { d.fixed = t.checked; $('#ed-dlwrap', w).hidden = !t.checked; if (t.checked && !d.deadline) { d.deadline = d.date; $('#ed-deadline', w).value = d.date; } }
     else if (t.id === 'ed-auto') d.autoResched = t.checked;
+    else if (t.id === 'ed-goal-target') { const tv = Math.max(1, +t.value || 1); d.goal = {enabled:true, target:tv, done:Math.min(tv, Math.max(0, +d.goal?.done || 0))}; refreshGoal(); }
     else if (t.name === 'scope') d.scope = t.value;
     else if (t.id === 'ed-file' || t.id === 'ed-file2' || t.id === 'ed-file3') uploadFiles(t.files, ed, refreshAtt).then(() => { t.value = ''; });
     else if (t.dataset.subDate !== undefined) { const x = d.subtasks[+t.dataset.subDate]; if (x) { x.date = t.value; if (t.value && !x.start) { x.start = d.start; x.dur = x.dur || 30; refreshSubs(); } } }
@@ -1762,6 +1775,9 @@ function bindEditor(w, ed){
       d.links.push({url, label}); $('#ln-url', w).value = ''; $('#ln-label', w).value = ''; refreshAtt();
     }
     else if (b.dataset.act === 'del') deleteFromEditor(ed, w);
+    else if (b.dataset.act === 'toggle-goal') { d.goal = {enabled:!(d.goal && d.goal.enabled), target:Math.max(1, +(d.goal && d.goal.target) || 5), done:Math.max(0, +(d.goal && d.goal.done) || 0)}; refreshGoal(); }
+    else if (b.dataset.act === 'goal-inc') { if (d.goal && d.goal.enabled) { d.goal.done = Math.min(d.goal.target, (d.goal.done || 0) + 1); refreshGoal(); } }
+    else if (b.dataset.act === 'goal-dec') { if (d.goal && d.goal.enabled) { d.goal.done = Math.max(0, (d.goal.done || 0) - 1); refreshGoal(); } }
     else if (b.dataset.act === 'addsub') addSub();
     else if (b.dataset.rmSub !== undefined) { d.subtasks.splice(+b.dataset.rmSub, 1); refreshSubs(); }
     else if (b.dataset.act === 'to-travel') { const p = {date:d.date, start:d.start, title:d.title}; closeModal(w); openTravel(null, p); }
@@ -1811,7 +1827,7 @@ function saveEditor(ed, w){
   const isNew = !ed.o;
   const it = isNew ? ed.base : clone(S.items.get(ed.o.id)); if (!it) { closeModal(w); return; }
   const wasRec = isRec(it); const hist = [];
-  Object.assign(it, {subtasks:d.subtasks.filter(x => String(x.text || '').trim()), title:d.title.trim(), category:d.category, priority:d.priority, reminder:+d.reminder || 0, fixed:d.fixed, deadline:d.fixed ? d.deadline : '', autoResched:d.autoResched, notes:d.notes, links:d.links, files:d.files});
+  Object.assign(it, {subtasks:d.subtasks.filter(x => String(x.text || '').trim()), title:d.title.trim(), category:d.category, priority:d.priority, reminder:+d.reminder || 0, fixed:d.fixed, deadline:d.fixed ? d.deadline : '', autoResched:d.autoResched, notes:d.notes, goal:d.goal, links:d.links, files:d.files});
   if (isNew) {
     Object.assign(it, {date:d.date, start:d.start, end:d.end, status:d.status || 'planejada', recur:normRecur(d.recur, d.date)});
     if (it.recur.freq === 'custom') it.date = it.recur.dates[0];

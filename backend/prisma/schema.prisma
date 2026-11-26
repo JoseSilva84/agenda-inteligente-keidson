@@ -60,6 +60,7 @@ model Activity {
   kept             Boolean @default(false)
   span             Boolean @default(false)
   notes            String  @default("")
+  goal             Json?
   subtasks         Json    @default("[]")
   links            Json    @default("[]")
   files            Json    @default("[]")

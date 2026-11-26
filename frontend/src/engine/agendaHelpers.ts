@@ -59,7 +59,8 @@ export const ICON: Record<string, string> = {
   img: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/>',
   doc: '<path d="M6 2h8l5 5v15H6z"/><path d="M14 2v5h5M8 12h8M8 15.5h8M8 19h5"/>',
   xls: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
-  play: '<polygon points="6 4 20 12 6 20 6 4"/>'
+  play: '<polygon points="6 4 20 12 6 20 6 4"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>'
 };
 
 export interface FileClassification {

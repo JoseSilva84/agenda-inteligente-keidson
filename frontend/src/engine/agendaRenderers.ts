@@ -113,6 +113,12 @@ function tooltipContent(o: any) {
   ];
   if (o.rec) details.push(['Recorrência', 'Atividade recorrente']);
   if (o.isSub) details.push(['Atividade', o.item.title]);
+  if (!o.isSub && o.item.goal && o.item.goal.enabled && +o.item.goal.target > 0) {
+    const gt = Math.max(1, +o.item.goal.target || 1);
+    const gd = Math.max(0, Math.min(gt, +o.item.goal.done || 0));
+    const gr = Math.max(0, gt - gd);
+    details.push(['Meta', `${gd}/${gt} feitas · faltam ${gr}`]);
+  }
   return detailTooltip(o.isSub ? o.sub.text : occTitle(o), details, noteToPlain(o.item.notes) ? String(o.item.notes || '').trim() : '');
 }
 
@@ -191,11 +197,22 @@ export function saveSettings() {
 export function patchOcc(o: any, patch: any, opts: any = {}) {
   const it = clone(S.items.get(o.id));
   if (!it) return;
+  const prevStatus = o.status || 'planejada';
   if (isRec(it) && !opts.series) {
     it.overrides = it.overrides || {};
     it.overrides[o.origDate] = { ...(it.overrides[o.origDate] || {}), ...patch };
   } else {
     Object.assign(it, patch);
+  }
+  if (patch.status && patch.status !== prevStatus && it.goal && it.goal.enabled && +it.goal.target > 0) {
+    const gt = Math.max(1, +it.goal.target || 1);
+    let gd = Math.max(0, +it.goal.done || 0);
+    if (patch.status === 'concluida' && prevStatus !== 'concluida') {
+      gd = Math.min(gt, gd + 1);
+    } else if (prevStatus === 'concluida' && patch.status !== 'concluida') {
+      gd = Math.max(0, gd - 1);
+    }
+    it.goal = { ...it.goal, target: gt, done: gd };
   }
   if (opts.hist) {
     it.history = [...(it.history || []), { at: Date.now(), text: opts.hist }].slice(-30);
@@ -947,14 +964,20 @@ export function mediaBadgesHTML(key: string, it: any, compact = false): string {
 }
 
 export function markIcons(it: any, key?: string) {
-  const notes = !!noteToPlain(it.notes);
   const subs = it.subtasks || [];
   const done = subs.filter((x: any) => x.done).length;
   const k = key || it.id || '';
   const attBadges = mediaBadgesHTML(k, it, true);
+  const g = it.goal;
+  const hasGoal = !!(g && g.enabled && +g.target > 0);
+  const gt = hasGoal ? Math.max(1, +g.target || 1) : 0;
+  const gd = hasGoal ? Math.max(0, Math.min(gt, +g.done || 0)) : 0;
+  const gr = hasGoal ? Math.max(0, gt - gd) : 0;
   return (
     attBadges +
-    (notes ? `<span class="ev-ic" title="Tem anotações" aria-label="Tem anotações">${ic('note')}</span>` : '') +
+    (hasGoal
+      ? `<span class="ev-ic ev-goal-ic${gd >= gt ? ' is-done' : ''}" title="Meta: ${gd} de ${gt} concluídas (faltam ${gr})" aria-label="Meta: ${gd} de ${gt} concluídas">${ic('target')}${gd}/${gt}</span>`
+      : '') +
     (subs.length
       ? `<span class="ev-ic" title="Subtarefas: ${done} de ${subs.length} feitas" aria-label="Subtarefas: ${done} de ${
           subs.length
@@ -996,17 +1019,28 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   const hasNotes = !!plainNote;
   const noteSnippet = hasNotes ? plainNote.split(/\r?\n/)[0].slice(0, 60) : '';
   const hasAtts = ((o.item.files && o.item.files.length) || (o.item.links && o.item.links.length)) > 0;
-  const topCompactBadges = hasAtts && (short || h < 42) ? mediaBadgesHTML(o.key, o.item, true) : '';
-  const bodyFullBadges = hasAtts && !short && h >= 42 ? `<div class="ev-att-row">${mediaBadgesHTML(o.key, o.item, false)}</div>` : '';
-  const quickNoteBtn = `<button type="button" class="ev-qnote-btn${hasNotes ? ' has-note' : ''}" data-qnote="${esc(
-    o.key
-  )}" title="${hasNotes ? 'Editar anotação rápida' : 'Adicionar anotação rápida'}" aria-label="Anotação rápida">${ic(
-    'note',
-    12
-  )}</button>`;
+  const g = o.item.goal;
+  const hasGoal = !!(g && g.enabled && +g.target > 0);
+  const gt = hasGoal ? Math.max(1, +g.target || 1) : 0;
+  const gd = hasGoal ? Math.max(0, Math.min(gt, +g.done || 0)) : 0;
+  const gr = hasGoal ? Math.max(0, gt - gd) : 0;
+  const goalBadgeCompact = hasGoal
+    ? `<span class="ev-goal-badge is-compact${gd >= gt ? ' is-done' : ''}" title="Meta: ${gd}/${gt} feitas · faltam ${gr}">${ic('target', 11)}<span>${gd}/${gt}</span></span>`
+    : '';
+  const goalBadgeFull = hasGoal
+    ? `<span class="ev-goal-badge${gd >= gt ? ' is-done' : ''}" title="Meta: ${gd} de ${gt} feitas · faltam ${gr}">${ic('target', 11)}<span>Meta ${gd}/${gt}</span></span>`
+    : '';
+  const topCompactBadges =
+    (hasAtts || hasGoal) && (short || h < 42)
+      ? `${hasAtts ? mediaBadgesHTML(o.key, o.item, true) : ''}${goalBadgeCompact}`
+      : '';
+  const bodyFullBadges =
+    (hasAtts || hasGoal) && !short && h >= 42
+      ? `<div class="ev-att-row">${hasAtts ? mediaBadgesHTML(o.key, o.item, false) : ''}${goalBadgeFull}</div>`
+      : '';
   const notePreviewHtml =
     hasNotes && !short && h >= 44
-      ? `<div class="ev-note-preview" data-qnote="${esc(o.key)}">${esc(noteSnippet)}</div>`
+      ? `<div class="ev-note-preview">${esc(noteSnippet)}</div>`
       : '';
   return `<div class="ev st-${es}${short ? ' short' : ''}" ${tooltipAttr(run ? { ...o, displayRange: [run.first, run.last] } : o)} data-key="${esc(o.key)}"${
     run ? ` data-span="1" data-first="${run.first}" data-last="${run.last}"` : ''
@@ -1015,7 +1049,7 @@ function evHTML(o: any, conflict?: boolean, run?: any) {
   }" style="--c:${c};top:${top}px;height:${h}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px)">
     <div class="ev-top"><div class="ev-t">${
       conflict ? '<span class="warnmark" title="Conflito de horário">!</span>' : ''
-    }${esc(o.item.title)}</div><div class="ev-top-actions">${topCompactBadges}${quickNoteBtn}</div></div>${bodyFullBadges}${notePreviewHtml}
+    }${esc(o.item.title)}</div>${topCompactBadges ? `<div class="ev-top-actions">${topCompactBadges}</div>` : ''}</div>${bodyFullBadges}${notePreviewHtml}
     <span class="rz" aria-hidden="true"></span><span class="rzx" aria-hidden="true" title="Arraste para os lados para ocupar outros dias"></span></div>`;
 }
 
@@ -1194,9 +1228,7 @@ export function monthHTML() {
               o.key
             )}" tabindex="0" role="button" style="--c:${safeColor(cat(o.item.category).color)}"><i></i><span class="chip-t">${esc(
               occTitle(o)
-            )}</span>${o.isSub ? '' : markIcons(o.item, o.key)}<button type="button" class="chip-qnote-btn${
-              noteToPlain(o.item.notes) ? ' has-note' : ''
-            }" data-qnote="${esc(o.key)}" title="Anotação rápida" aria-label="Anotação rápida">${ic('note', 11)}</button></div>`
+            )}</span>${o.isSub ? '' : markIcons(o.item, o.key)}</div>`
         )
         .join('');
       const tsegs = travelSegs(d);

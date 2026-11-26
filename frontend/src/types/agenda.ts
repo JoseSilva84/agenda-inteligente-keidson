@@ -36,6 +36,12 @@ export interface Subtask {
   dur?: number;
 }
 
+export interface ActivityGoal {
+  enabled: boolean;
+  target: number;
+  done: number;
+}
+
 export interface ActivityLink {
   url: string;
   label: string;
@@ -91,6 +97,7 @@ export interface ActivityItem {
   kept?: boolean;
   span?: boolean;
   notes: string;
+  goal?: ActivityGoal;
   subtasks?: Subtask[];
   links: ActivityLink[];
   files: AttachmentFile[];

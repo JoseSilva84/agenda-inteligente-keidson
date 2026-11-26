@@ -14,10 +14,12 @@ Uma agenda online, bonita e fácil de usar, que funciona no computador, tablet e
 - Criar, editar, apagar e **arrastar** atividades para outro horário
 - Escolher **cores e categorias**
 - Criar atividades que **se repetem** (toda segunda, todo mês…)
+- Definir uma **Meta de repetições** (entre Subtarefas e Anotações): escolha no seletor quantas vezes deseja cumprir uma atividade até terminar (ex.: *Estudar o livro de Jó*) e acompanhe no contador quantas vezes **já foram feitas** e quantas **ainda faltam**
 - Marcar como **concluída, pendente ou cancelada**
 - **Pesquisar** atividades passadas e futuras
 
 ### Arquivos dentro de cada atividade
+> Na grade da agenda, cada atividade exibe apenas os ícones dos anexos e elementos reais (PDF, foto/imagem, áudio, vídeo, Excel, Word, link, YouTube, subtarefas e meta), mantendo o visual limpo sem ícone de recado.
 | Tipo | O que dá para fazer |
 |---|---|
 | PDF | Anexar e abrir sem sair da agenda |

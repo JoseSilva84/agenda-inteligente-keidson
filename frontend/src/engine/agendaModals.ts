@@ -294,6 +294,7 @@ export function blankItem(p: any = {}) {
     deadline: '',
     autoResched: true,
     notes: '',
+    goal: { enabled: false, target: 5, done: 0 },
     links: [],
     files: [],
     history: [],
@@ -316,6 +317,7 @@ export function copyOcc(o: any, el?: HTMLElement | null) {
     category: it.category,
     priority: it.priority || 'media',
     notes: it.notes || '',
+    goal: it.goal ? clone(it.goal) : { enabled: false, target: 5, done: 0 },
     subtasks: (it.subtasks || []).map((x: any) => ({ id: uid(), text: x.text, done: false, dur: x.dur || 30 })),
     links: clone(it.links || []),
     files: clone(it.files || []),
@@ -1109,6 +1111,13 @@ export function openEditor(key?: string | null, preset: any = {}) {
     deadline: base.deadline || '',
     autoResched: base.autoResched !== false,
     notes: base.notes || '',
+    goal: base.goal && typeof base.goal === 'object'
+      ? {
+          enabled: !!base.goal.enabled,
+          target: Math.max(1, +base.goal.target || 5),
+          done: Math.max(0, Math.min(Math.max(1, +base.goal.target || 5), +base.goal.done || 0))
+        }
+      : { enabled: false, target: 5, done: 0 },
     subtasks: clone(base.subtasks || []),
     links: clone(base.links || []),
     files: clone(base.files || []),
@@ -1244,6 +1253,7 @@ function editorInner(ed: any) {
         ? ''
         : `<div class="addlink" style="grid-template-columns:1fr auto"><input class="inp" id="sub-new" placeholder="Nova subtarefa (Enter adiciona)" aria-label="Nova subtarefa"><button type="button" class="btn btn-sm" data-act="addsub">Adicionar</button></div>`
     }</div>
+    <div class="sect goal-sect" id="ed-goal-sect">${goalHTML(ed)}</div>
     ${richNotesFieldHTML('ed-notes', 'Anotações', d.notes || '', 'Pauta, detalhes, o que levar…', ro)}
     <div class="sect" id="ed-att-sect"><h3>Arquivos e links</h3><div id="ed-att"></div>
       ${
@@ -1280,6 +1290,90 @@ function editorInner(ed: any) {
 }
 
 const isYT = (u?: string) => isYouTubeUrl(u);
+
+const GOAL_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 20, 21, 25, 30, 40, 42, 50, 60, 90, 100];
+
+function goalOptionsHTML(cur: number) {
+  const val = Math.max(1, +cur || 5);
+  const list = GOAL_CHOICES.includes(val) ? GOAL_CHOICES : [...GOAL_CHOICES, val].sort((a, b) => a - b);
+  return list
+    .map((n) => `<option value="${n}" ${n === val ? 'selected' : ''}>${n} ${plural(n, 'vez até terminar', 'vezes até terminar')}</option>`)
+    .join('');
+}
+
+function goalHTML(ed: any) {
+  const ro = S.readOnly;
+  const g = ed.d.goal || { enabled: false, target: 5, done: 0 };
+  const active = !!g.enabled;
+  const target = Math.max(1, +g.target || 5);
+  const done = Math.max(0, Math.min(target, +g.done || 0));
+  const rem = Math.max(0, target - done);
+  const pct = Math.min(100, Math.round((done / target) * 100));
+  const titleSample = (ed.d.title || '').trim() || 'Estudar o livro de Jó';
+  const dis = ro ? 'disabled' : '';
+
+  return `<div class="goal-bar">
+      <button type="button" class="btn btn-sm goal-toggle-btn ${active ? 'is-active' : ''}" data-act="toggle-goal" aria-pressed="${active}" ${dis}>
+        ${ic('target', 15)}
+        <span>Meta</span>
+        ${active ? `<span class="goal-pill-mini num">${done}/${target}</span>` : ''}
+      </button>
+      <span class="goal-hint">${
+        active
+          ? done >= target
+            ? '🎉 Meta concluída! Todas as repetições foram cumpridas.'
+            : `Meta ativa: ${done} ${plural(done, 'feita', 'feitas')} · ${plural(rem, 'falta', 'faltam')} ${rem} para concluir`
+          : 'Defina quantas vezes deseja cumprir esta atividade até concluí-la (ex.: Estudar o livro de Jó).'
+      }</span>
+    </div>
+    ${
+      active
+        ? `<div class="goal-panel">
+            <div class="goal-config-row">
+              <label class="field" for="ed-goal-target" style="margin:0;flex:1 1 240px">
+                <span>Quantidade de vezes que deseja repetir “${esc(titleSample)}” até terminar</span>
+                <select id="ed-goal-target" class="inp" ${dis}>
+                  ${goalOptionsHTML(target)}
+                </select>
+              </label>
+            </div>
+            <div class="goal-stats-grid">
+              <div class="goal-stat-card is-done">
+                <span class="goal-stat-lbl">Já feitas</span>
+                <b class="goal-stat-val num">${done}</b>
+                <small>${plural(done, 'vez cumprida', 'vezes cumpridas')}</small>
+              </div>
+              <div class="goal-stat-card is-rem">
+                <span class="goal-stat-lbl">Faltam fazer</span>
+                <b class="goal-stat-val num">${rem}</b>
+                <small>${rem === 0 ? 'meta 100% atingida!' : plural(rem, 'vez restante', 'vezes restantes')}</small>
+              </div>
+              <div class="goal-stat-card is-total">
+                <span class="goal-stat-lbl">Total da meta</span>
+                <b class="goal-stat-val num">${done}/${target}</b>
+                <small>${pct}% concluído</small>
+              </div>
+            </div>
+            <div class="goal-progress-wrap">
+              <div class="goal-progress-track" role="progressbar" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${target}">
+                <div class="goal-progress-fill ${done >= target ? 'is-complete' : ''}" style="width:${pct}%"></div>
+              </div>
+            </div>
+            ${
+              ro
+                ? ''
+                : `<div class="goal-actions-row">
+                    <button type="button" class="btn btn-sm" data-act="goal-dec" ${done <= 0 ? 'disabled' : ''} title="Diminuir 1 repetição feita">−1 feita</button>
+                    <button type="button" class="btn btn-sm btn-primary" data-act="goal-inc" ${done >= target ? 'disabled' : ''} title="Registrar +1 vez concluída">+1 vez feita</button>
+                    <button type="button" class="btn btn-sm" data-act="goal-reset" ${done === 0 ? 'disabled' : ''} title="Zerar contador da meta">Zerar contador</button>
+                    <span class="sp"></span>
+                    <button type="button" class="btn btn-sm btn-danger" data-act="goal-off" title="Desativar meta desta atividade">Desativar meta</button>
+                  </div>`
+            }
+          </div>`
+        : ''
+    }`;
+}
 
 function subsHTML(ed: any) {
   const ro = S.readOnly;
@@ -1419,6 +1513,10 @@ function bindEditor(w: HTMLElement, ed: any) {
   const refreshSubs = () => {
     $('#ed-subs', w).innerHTML = subsHTML(ed);
   };
+  const refreshGoal = () => {
+    const box = $('#ed-goal-sect', w);
+    if (box) box.innerHTML = goalHTML(ed);
+  };
   refreshSubs();
   const addSub = () => {
     const inp = $('#sub-new', w);
@@ -1531,8 +1629,10 @@ function bindEditor(w: HTMLElement, ed: any) {
   refreshConflict();
   f.addEventListener('input', (e: Event) => {
     const t = e.target as HTMLInputElement;
-    if (t.id === 'ed-title') d.title = t.value;
-    else if (t.id === 'ed-date') {
+    if (t.id === 'ed-title') {
+      d.title = t.value;
+      if (d.goal?.enabled) refreshGoal();
+    } else if (t.id === 'ed-date') {
       d.date = t.value;
       refreshConflict();
     } else if (t.id === 'ed-start') {
@@ -1598,7 +1698,15 @@ function bindEditor(w: HTMLElement, ed: any) {
         $('#ed-deadline', w).value = d.date;
       }
     } else if (t.id === 'ed-auto') d.autoResched = t.checked;
-    else if (t.name === 'scope') d.scope = t.value;
+    else if (t.id === 'ed-goal-target') {
+      const targetVal = Math.max(1, +t.value || 1);
+      d.goal = {
+        enabled: true,
+        target: targetVal,
+        done: Math.min(targetVal, Math.max(0, +d.goal?.done || 0))
+      };
+      refreshGoal();
+    } else if (t.name === 'scope') d.scope = t.value;
     else if (t.id === 'ed-file' || t.id === 'ed-file2' || t.id === 'ed-file3' || t.id === 'ed-file4' || t.id === 'ed-file5') {
       if (t.files) uploadFiles(t.files, ed, refreshAtt).then(() => (t.value = ''));
     } else if (t.dataset.subDate !== undefined) {
@@ -1653,8 +1761,48 @@ function bindEditor(w: HTMLElement, ed: any) {
       return;
     }
     if (b.dataset.seg) {
+      const prevVal = d[b.dataset.seg];
       d[b.dataset.seg] = b.dataset.val;
       $$(`[data-seg="${b.dataset.seg}"]`, w).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      if (b.dataset.seg === 'status' && d.goal && d.goal.enabled && b.dataset.val !== prevVal) {
+        const gt = Math.max(1, +d.goal.target || 1);
+        let gd = Math.max(0, +d.goal.done || 0);
+        if (b.dataset.val === 'concluida' && prevVal !== 'concluida') {
+          gd = Math.min(gt, gd + 1);
+        } else if (prevVal === 'concluida' && b.dataset.val !== 'concluida') {
+          gd = Math.max(0, gd - 1);
+        }
+        d.goal = { ...d.goal, target: gt, done: gd };
+        refreshGoal();
+      }
+    } else if (b.dataset.act === 'toggle-goal') {
+      const nextEnabled = !(d.goal && d.goal.enabled);
+      const target = Math.max(1, +(d.goal && d.goal.target) || 5);
+      const done = Math.max(0, Math.min(target, +(d.goal && d.goal.done) || (d.status === 'concluida' ? 1 : 0)));
+      d.goal = { enabled: nextEnabled, target, done };
+      refreshGoal();
+    } else if (b.dataset.act === 'goal-inc') {
+      if (d.goal && d.goal.enabled) {
+        const gt = Math.max(1, +d.goal.target || 1);
+        const gd = Math.min(gt, Math.max(0, +d.goal.done || 0) + 1);
+        d.goal = { ...d.goal, target: gt, done: gd };
+        refreshGoal();
+      }
+    } else if (b.dataset.act === 'goal-dec') {
+      if (d.goal && d.goal.enabled) {
+        const gt = Math.max(1, +d.goal.target || 1);
+        const gd = Math.max(0, (+d.goal.done || 0) - 1);
+        d.goal = { ...d.goal, target: gt, done: gd };
+        refreshGoal();
+      }
+    } else if (b.dataset.act === 'goal-reset') {
+      if (d.goal && d.goal.enabled) {
+        d.goal = { ...d.goal, done: 0 };
+        refreshGoal();
+      }
+    } else if (b.dataset.act === 'goal-off') {
+      d.goal = { ...(d.goal || { target: 5, done: 0 }), enabled: false };
+      refreshGoal();
     } else if (b.dataset.viewFile !== undefined) openViewer(d.files[+b.dataset.viewFile]);
     else if (b.dataset.playYt !== undefined) {
       const ln = d.links[+b.dataset.playYt];
@@ -1883,6 +2031,14 @@ function saveEditor(ed: any, w: HTMLElement) {
     deadline: d.fixed ? d.deadline : '',
     autoResched: d.autoResched,
     notes: d.notes,
+    goal:
+      d.goal && d.goal.enabled
+        ? {
+            enabled: true,
+            target: Math.max(1, +d.goal.target || 1),
+            done: Math.max(0, Math.min(Math.max(1, +d.goal.target || 1), +d.goal.done || 0))
+          }
+        : { enabled: false, target: Math.max(1, +(d.goal && d.goal.target) || 5), done: 0 },
     links: d.links,
     files: d.files
   });

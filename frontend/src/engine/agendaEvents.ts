@@ -299,6 +299,7 @@ export function pasteAt(date: string, startMin: number) {
     category: c.category,
     priority: c.priority,
     notes: c.notes,
+    goal: c.goal ? clone(c.goal) : { enabled: false, target: 5, done: 0 },
     subtasks: clone(c.subtasks || []),
     links: clone(c.links),
     files: clone(c.files),
